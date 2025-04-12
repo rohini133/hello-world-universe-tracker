@@ -36,9 +36,12 @@ export const ProductSearchItem = ({ product, onAddToCart }: ProductSearchItemPro
       <div className="flex items-center">
         <div className="h-12 w-12 rounded-md overflow-hidden flex-shrink-0">
           <img 
-            src={product.image} 
+            src={product.image || 'https://placehold.co/400x300?text=No+Image'} 
             alt={product.name} 
             className="h-full w-full object-cover"
+            onError={(e) => {
+              e.currentTarget.src = 'https://placehold.co/400x300?text=No+Image';
+            }}
           />
         </div>
         <div className="ml-4">
