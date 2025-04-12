@@ -54,7 +54,7 @@ export const createBill = async (
     
     // Create bill data
     const billData = {
-      id: uuidv4(),
+      id: crypto.randomUUID(), // Instead of uuidv4()
       user_id: userId,
       subtotal,
       tax,
@@ -92,7 +92,7 @@ export const createBill = async (
         : item.product.price;
       
       const billItemData = {
-        id: uuidv4(),
+        id: crypto.randomUUID(),
         bill_id: billData.id,
         product_id: item.product.id,
         product_name: item.product.name,
