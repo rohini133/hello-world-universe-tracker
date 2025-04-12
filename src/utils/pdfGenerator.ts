@@ -8,7 +8,7 @@ const SHOP_ADDRESS_LINE1 = "804, Ravivar Peth, Kapad Ganj";
 const SHOP_ADDRESS_LINE2 = "Opp. Shani Mandir, Pune - 411002";
 const SHOP_CONTACT = "9890669994/9307060539";
 const SHOP_GSTIN = "27AFIFS6956E1ZJ";
-const SHOP_LOGO = "public/lovable-uploads/3f57b9d6-fe87-42f7-8e4b-2e5805ea33ae.png";
+const SHOP_LOGO = "public/lovable-uploads/85d83170-b4fe-40bb-962f-890602ddcacc.png";
 
 export const generatePDF = (bill: BillWithItems): Blob => {
   console.log("Generating PDF for bill:", bill);
@@ -33,13 +33,13 @@ export const generatePDF = (bill: BillWithItems): Blob => {
     
     // Add logo at the top
     try {
-      doc.addImage(SHOP_LOGO, 'PNG', (pageWidth / 2) - 20, margin, 40, 25, undefined, 'FAST');
+      doc.addImage(SHOP_LOGO, 'PNG', (pageWidth / 2) - 25, margin, 50, 30, undefined, 'FAST');
     } catch (logoError) {
       console.error("Could not add logo:", logoError);
     }
     
     // Add shop information
-    let currentY = margin + 30; // Starting Y position after logo
+    let currentY = margin + 35; // Starting Y position after logo
     
     // Shop address and contact
     doc.setFontSize(10);
@@ -78,12 +78,37 @@ export const generatePDF = (bill: BillWithItems): Blob => {
     doc.text(`Time : ${formattedTime}`, pageWidth - margin, currentY, { align: "right" });
     currentY += 6;
     
+    // Add Customer Information
+    if (bill.customerName || bill.customerPhone || bill.customerEmail) {
+      doc.text("Customer:", margin, currentY);
+      currentY += 5;
+      
+      if (bill.customerName) {
+        doc.setFont("helvetica", "normal");
+        doc.text(`Name: ${bill.customerName}`, margin + 5, currentY);
+        currentY += 5;
+      }
+      
+      if (bill.customerPhone) {
+        doc.text(`Phone: ${bill.customerPhone}`, margin + 5, currentY);
+        currentY += 5;
+      }
+      
+      if (bill.customerEmail) {
+        doc.text(`Email: ${bill.customerEmail}`, margin + 5, currentY);
+        currentY += 5;
+      }
+      
+      currentY += 2;
+    }
+    
     // Add a separator line
     doc.line(margin, currentY, pageWidth - margin, currentY);
     currentY += 7;
     
     // Add header for table columns
     doc.setFontSize(10);
+    doc.setFont("helvetica", "bold");
     doc.text("Particulars", margin, currentY);
     doc.text("Qty", pageWidth * 0.6, currentY, { align: "center" });
     doc.text("MRP", pageWidth * 0.75, currentY, { align: "center" });
@@ -139,56 +164,13 @@ export const generatePDF = (bill: BillWithItems): Blob => {
     doc.text(`Total :`, margin, currentY);
     doc.setFontSize(11);
     doc.text(`${formatCurrency(bill.total, false)}`, pageWidth - margin, currentY, { align: "right" });
-    currentY += 6;
-    
-    // Add GST summary box
-    doc.setLineWidth(0.1);
-    doc.rect(margin, currentY, contentWidth, 25);
-    currentY += 6;
-    
-    // Add GST summary header
-    doc.setFontSize(10);
-    doc.text("GST Summary :", margin + 2, currentY);
-    currentY += 4;
-    
-    // GST table headers
-    doc.setFont("helvetica", "normal");
-    doc.text("Description", margin + 5, currentY);
-    doc.text("Taxable", pageWidth * 0.5, currentY, { align: "center" });
-    doc.text("CGST", pageWidth * 0.7, currentY, { align: "center" });
-    doc.text("SGST", pageWidth * 0.9, currentY, { align: "center" });
-    currentY += 4;
-    
-    // Calculate GST amounts
-    const taxableAmount = bill.subtotal;
-    const cgst = bill.tax / 2;
-    const sgst = bill.tax / 2;
-    
-    // GST details
-    doc.text("GST 18.00%", margin + 5, currentY);
-    doc.text(formatCurrency(taxableAmount, false), pageWidth * 0.5, currentY, { align: "center" });
-    doc.text(formatCurrency(cgst, false), pageWidth * 0.7, currentY, { align: "center" });
-    doc.text(formatCurrency(sgst, false), pageWidth * 0.9, currentY, { align: "center" });
-    currentY += 4;
-    
-    // GST table totals
-    doc.setFont("helvetica", "bold");
-    doc.text(formatCurrency(taxableAmount, false), pageWidth * 0.5, currentY, { align: "center" });
-    doc.text(formatCurrency(cgst, false), pageWidth * 0.7, currentY, { align: "center" });
-    doc.text(formatCurrency(sgst, false), pageWidth * 0.9, currentY, { align: "center" });
     currentY += 10;
-    
-    // Add Net Amount line
-    doc.setFontSize(11);
-    doc.text(`Net Amount :`, margin, currentY);
-    doc.text(`${formatCurrency(bill.total, false)}`, pageWidth - margin, currentY, { align: "right" });
-    currentY += 7;
     
     // Add payment details
     doc.setFont("helvetica", "normal");
     doc.setFontSize(10);
     doc.text(`${getPaymentMethodName(bill.paymentMethod)} : ${formatCurrency(bill.total, false)}`, margin, currentY);
-    doc.text(`Cash Date : ${formattedDate}`, pageWidth / 2, currentY);
+    doc.text(`Date : ${formattedDate}`, pageWidth / 2, currentY);
     currentY += 6;
     
     // Add UPI details
@@ -254,12 +236,13 @@ export const generateReceiptHTML = (bill: BillWithItems): string => {
         .total-table td { padding: 3px 0; }
         .total-table .total-row td { font-weight: bold; padding-top: 5px; border-top: 1px solid #ddd; }
         .footer { margin-top: 20px; text-align: center; font-size: 10px; }
+        .customer-info { margin: 10px 0; text-align: left; }
       </style>
     </head>
     <body>
       <div class="receipt">
         <div class="header">
-          <div class="store-name">Vivaas</div>
+          <img src="public/lovable-uploads/85d83170-b4fe-40bb-962f-890602ddcacc.png" alt="Vivaa's Logo" style="max-width: 100px; margin-bottom: 10px;">
           <div>Shiv Park Phase 2 Shop No-6-7 Pune Solapur Road</div>
           <div>Lakshumi Colony Opposite HDFC Bank Near Angle School, Pune-412307</div>
           <div>9657171777 || 9765971717</div>
@@ -267,7 +250,7 @@ export const generateReceiptHTML = (bill: BillWithItems): string => {
           <div style="margin-top: 5px;">Receipt #${bill.id}</div>
         </div>
         
-        <div style="margin: 15px 0;">
+        <div class="customer-info">
           <div><strong>Customer:</strong> ${bill.customerName || "Walk-in Customer"}</div>
           ${bill.customerPhone ? `<div><strong>Phone:</strong> ${bill.customerPhone}</div>` : ''}
           ${bill.customerEmail ? `<div><strong>Email:</strong> ${bill.customerEmail}</div>` : ''}

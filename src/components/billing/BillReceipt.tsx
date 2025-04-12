@@ -1,4 +1,3 @@
-
 import { useState, useRef } from "react";
 import { Bill, BillWithItems } from "@/data/models";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
@@ -39,22 +38,17 @@ export const BillReceipt = ({ bill }: BillReceiptProps) => {
         items: bill.items || []
       };
       
-      // Generate PDF content
       const pdfBlob = generatePDF(billWithItems);
       
-      // Create a URL for the PDF blob
       const pdfUrl = URL.createObjectURL(pdfBlob);
       
-      // Open the PDF in a new window for printing
       const printWindow = window.open(pdfUrl, '_blank');
       
       if (printWindow) {
         printWindow.addEventListener('load', () => {
           try {
-            // Set longer timeout to ensure PDF is fully loaded
             setTimeout(() => {
               printWindow.print();
-              // Add a longer delay before closing to ensure print dialog is handled
               printWindow.onafterprint = () => {
                 setTimeout(() => {
                   printWindow.close();
@@ -84,7 +78,6 @@ export const BillReceipt = ({ bill }: BillReceiptProps) => {
           variant: "destructive",
         });
         
-        // Fallback - just open the PDF directly
         window.open(pdfUrl, '_blank');
         setIsPrinting(false);
       }
@@ -141,10 +134,8 @@ export const BillReceipt = ({ bill }: BillReceiptProps) => {
         items: bill.items || []
       };
       
-      // Generate PDF content
       const pdfBlob = generatePDF(billWithItems);
       
-      // Create download link for PDF
       const url = URL.createObjectURL(pdfBlob);
       const link = document.createElement('a');
       link.href = url;
@@ -152,7 +143,6 @@ export const BillReceipt = ({ bill }: BillReceiptProps) => {
       document.body.appendChild(link);
       link.click();
       
-      // Clean up
       setTimeout(() => {
         document.body.removeChild(link);
         URL.revokeObjectURL(url);
@@ -190,9 +180,9 @@ export const BillReceipt = ({ bill }: BillReceiptProps) => {
       <CardContent className="flex-grow overflow-auto">
         <div ref={receiptRef} className="text-center">
           <img 
-            src="/public/lovable-uploads/3f57b9d6-fe87-42f7-8e4b-2e5805ea33ae.png" 
-            alt="Vivaas Logo" 
-            className="h-20 mx-auto mb-2"
+            src="/lovable-uploads/85d83170-b4fe-40bb-962f-890602ddcacc.png" 
+            alt="Vivaa's Logo" 
+            className="h-24 mx-auto mb-2"
           />
           <div className="text-sm text-gray-600">804, Ravivar Peth, Kapad Ganj</div>
           <div className="text-sm text-gray-600">Opp. Shani Mandir, Pune - 411002</div>
@@ -257,43 +247,6 @@ export const BillReceipt = ({ bill }: BillReceiptProps) => {
           </div>
 
           <div className="border-t border-dashed border-gray-300 my-3"></div>
-          
-          <div className="border border-gray-200 rounded p-2 mb-3">
-            <div className="text-left font-bold mb-1">GST Summary:</div>
-            <table className="w-full text-xs">
-              <thead>
-                <tr>
-                  <th className="text-left">Description</th>
-                  <th className="text-right">Taxable</th>
-                  <th className="text-right">CGST</th>
-                  <th className="text-right">SGST</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>GST 18.00%</td>
-                  <td className="text-right">{formatCurrency(bill.subtotal)}</td>
-                  <td className="text-right">{formatCurrency(bill.tax / 2)}</td>
-                  <td className="text-right">{formatCurrency(bill.tax / 2)}</td>
-                </tr>
-              </tbody>
-              <tfoot>
-                <tr className="font-bold">
-                  <td></td>
-                  <td className="text-right">{formatCurrency(bill.subtotal)}</td>
-                  <td className="text-right">{formatCurrency(bill.tax / 2)}</td>
-                  <td className="text-right">{formatCurrency(bill.tax / 2)}</td>
-                </tr>
-              </tfoot>
-            </table>
-          </div>
-
-          <div className="text-left font-bold mb-2">
-            <div className="flex justify-between">
-              <span>Net Amount:</span>
-              <span>{formatCurrency(bill.total)}</span>
-            </div>
-          </div>
           
           <div className="text-left text-sm">
             <div className="flex justify-between">
