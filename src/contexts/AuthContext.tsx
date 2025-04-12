@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useToast } from "@/components/ui/use-toast";
@@ -7,18 +6,18 @@ import { supabase, checkActiveSession, debugAuthStatus } from "@/integrations/su
 // Define fixed users for the system
 const USERS = [
   {
-    username: "rohini25",
-    password: "Rohini@123",
+    username: "owner",
+    password: "owner@123",
     role: "admin",
-    name: "Rohini",
-    email: "rohini@vivaas.com"
+    name: "Owner",
+    email: "owner@vivaas.com"
   },
   {
-    username: "balaji12",
-    password: "Balaji@25",
+    username: "cashier",
+    password: "cashier@123",
     role: "cashier",
-    name: "Balaji",
-    email: "balaji@vivaas.com"
+    name: "Cashier",
+    email: "cashier@vivaas.com"
   }
 ];
 
@@ -153,7 +152,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           
           if (signupError) {
             console.error("User creation failed:", signupError);
-            return false;
+            
+            // For the short-term fix, we'll use local authentication even if Supabase fails
+            localStorage.setItem("isLoggedIn", "true");
+            localStorage.setItem("userRole", user.role);
+            localStorage.setItem("username", user.name);
+            
+            setIsLoggedIn(true);
+            setUserRole(user.role);
+            setUserName(user.name);
+            
+            toast({
+              title: "Local Login",
+              description: "Using local authentication mode due to database connectivity issues.",
+            });
+            
+            return true;
           }
           
           // Try logging in again after creating the user

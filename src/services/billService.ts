@@ -1,9 +1,22 @@
 
 import { v4 as uuidv4 } from 'uuid';
-import { CartItem, Bill, BillWithItems, BillItem } from '@/types/supabase-extensions';
+import { CartItem, Bill, BillWithItems, BillItem, BillItemWithProduct } from '@/types/supabase-extensions';
 import { supabase } from '@/integrations/supabase/client';
 import { decreaseStock } from './productService';
 import { toast } from '@/components/ui/use-toast';
+
+/**
+ * Sends bill receipt via WhatsApp (placeholder function)
+ */
+export const sendBillToWhatsApp = async (bill: BillWithItems) => {
+  console.log("Sending WhatsApp receipt for bill:", bill);
+  // This is a placeholder. In a real implementation, this would integrate with WhatsApp Business API
+  toast({
+    title: "WhatsApp Integration",
+    description: `Mock sending receipt to ${bill.customerPhone || "customer"}`
+  });
+  return Promise.resolve();
+};
 
 /**
  * Creates a new bill from the cart items
@@ -70,7 +83,7 @@ export const createBill = async (
     console.log("Bill created successfully:", billResult);
     
     // Create bill items
-    const billItems: BillItem[] = [];
+    const billItems: BillItemWithProduct[] = [];
     
     // Insert bill items into database one by one
     for (const item of cartItems) {
@@ -78,7 +91,7 @@ export const createBill = async (
         ? item.product.price * (1 - item.product.discountPercentage / 100)
         : item.product.price;
       
-      const billItem = {
+      const billItemData = {
         id: uuidv4(),
         bill_id: billData.id,
         product_id: item.product.id,
@@ -89,11 +102,11 @@ export const createBill = async (
         total: discountedPrice * item.quantity
       };
       
-      console.log("Inserting bill item:", billItem);
+      console.log("Inserting bill item:", billItemData);
       
       const { data: itemResult, error: itemError } = await supabase
         .from('bill_items')
-        .insert(billItem)
+        .insert(billItemData)
         .select()
         .single();
       
@@ -106,7 +119,18 @@ export const createBill = async (
         });
       } else {
         console.log("Bill item created successfully:", itemResult);
-        billItems.push(itemResult);
+        // Create a BillItemWithProduct object that includes the product information
+        billItems.push({
+          id: itemResult.id,
+          billId: itemResult.bill_id,
+          productId: itemResult.product_id,
+          productName: itemResult.product_name,
+          productPrice: itemResult.product_price,
+          discountPercentage: itemResult.discount_percentage,
+          quantity: itemResult.quantity,
+          total: itemResult.total,
+          product: item.product
+        });
       }
       
       // Decrease stock for the product
@@ -133,17 +157,9 @@ export const createBill = async (
       customerPhone: customerPhone || null,
       customerEmail: customerEmail || null,
       paymentMethod,
-      items: billItems.map(item => ({
-        id: item.id,
-        billId: item.bill_id,
-        productId: item.product_id,
-        productName: item.product_name,
-        productPrice: item.product_price,
-        discountPercentage: item.discount_percentage,
-        quantity: item.quantity,
-        total: item.total,
-        product: cartItems.find(cartItem => cartItem.product.id === item.product_id)?.product
-      }))
+      status: billResult.status,
+      userId: billResult.user_id,
+      items: billItems
     };
   } catch (error) {
     console.error("Bill creation failed:", error);
