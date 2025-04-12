@@ -89,7 +89,10 @@ export const ShoppingCart = ({
 
     setIsLoading(true);
     try {
-      // Fix here: Pass individual parameters instead of an object
+      console.log("Starting checkout process with cart items:", cartItems);
+      console.log("Customer info:", { customerName, customerPhone, customerEmail, paymentMethod });
+      
+      // Create bill in Supabase
       const bill = await createBill(
         cartItems,
         customerName,
@@ -97,6 +100,8 @@ export const ShoppingCart = ({
         customerEmail,
         paymentMethod
       );
+      
+      console.log("Bill created successfully:", bill);
       
       onCheckoutComplete(bill.id, {
         name: customerName,
@@ -110,9 +115,15 @@ export const ShoppingCart = ({
       setCustomerEmail("");
       setPaymentMethod("cash");
       
+      toast({
+        title: "Checkout complete",
+        description: "Bill has been created and saved successfully.",
+      });
+      
       onCartClear();
       
     } catch (error) {
+      console.error("Checkout error:", error);
       toast({
         title: "Checkout failed",
         description: "There was an error processing your bill. Please try again.",

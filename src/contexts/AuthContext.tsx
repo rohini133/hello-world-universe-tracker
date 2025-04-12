@@ -2,23 +2,23 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useToast } from "@/components/ui/use-toast";
-import { supabase, enhancedLogin, debugAuthStatus } from "@/integrations/supabase/client";
+import { supabase, checkActiveSession, debugAuthStatus } from "@/integrations/supabase/client";
 
 // Define fixed users for the system
 const USERS = [
   {
-    username: "owner",
-    password: "owner@123",
+    username: "rohini25",
+    password: "Rohini@123",
     role: "admin",
-    name: "Owner",
-    email: "owner@vivaas.com"
+    name: "Rohini",
+    email: "rohini@vivaas.com"
   },
   {
-    username: "cashier",
-    password: "cashier@123",
+    username: "balaji12",
+    password: "Balaji@25",
     role: "cashier",
-    name: "Cashier",
-    email: "cashier@vivaas.com"
+    name: "Balaji",
+    email: "balaji@vivaas.com"
   }
 ];
 
@@ -54,46 +54,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   
   // We don't want to auto-login on the login page
   const shouldAutoLogin = location.pathname !== "/login";
-
-  // Auto-login for development - this will automatically log in with admin credentials
-  useEffect(() => {
-    const autoLogin = async () => {
-      console.log("Checking for existing session...");
-      const { data } = await supabase.auth.getSession();
-      
-      if (!data.session && shouldAutoLogin) {
-        console.log("No session found. Attempting auto-login for development...");
-        try {
-          // Auto-login with first admin user
-          const adminUser = USERS[0]; // Use the first user (admin)
-          const { success, error } = await enhancedLogin(adminUser.email, adminUser.password);
-          
-          if (success) {
-            console.log("Auto-login successful");
-            localStorage.setItem("isLoggedIn", "true");
-            localStorage.setItem("userRole", adminUser.role);
-            localStorage.setItem("username", adminUser.name);
-            
-            setIsLoggedIn(true);
-            setUserRole(adminUser.role);
-            setUserName(adminUser.name);
-            
-            toast({
-              title: "Auto-Login Successful",
-              description: `Welcome back, ${adminUser.name}! (Auto-login for development)`,
-            });
-          } else {
-            console.error("Auto-login failed:", error);
-          }
-        } catch (err) {
-          console.error("Auto-login error:", err);
-        }
-      }
-      setIsInitializing(false);
-    };
-    
-    autoLogin();
-  }, [toast, shouldAutoLogin]);
 
   // Check for active Supabase session on mount and auth state changes
   useEffect(() => {
@@ -149,6 +109,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           setUserName(storedName);
         }
       }
+      
+      setIsInitializing(false);
     };
     
     checkSession();
@@ -157,7 +119,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return () => {
       subscription.unsubscribe();
     };
-  }, []);
+  }, [isLoggedIn]);
 
   const login = async (username: string, password: string): Promise<boolean> => {
     // Find user with matching credentials
@@ -167,18 +129,51 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     
     if (user) {
       try {
+        console.log("Logging in with:", user.email);
         // Log in to Supabase with the corresponding email/password
-        const { success, error } = await enhancedLogin(user.email, user.password);
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email: user.email,
+          password: user.password
+        });
         
-        if (!success) {
+        if (error) {
           console.error("Supabase login failed:", error);
           
-          // If Supabase login fails, we'll fall back to local authentication
-          toast({
-            variant: "destructive",
-            title: "Supabase Auth Warning",
-            description: "Using local auth mode. Some features may be limited.",
+          // Create the user in Supabase if they don't exist
+          const { error: signupError } = await supabase.auth.signUp({
+            email: user.email,
+            password: user.password,
+            options: {
+              data: {
+                full_name: user.name,
+                role: user.role
+              }
+            }
           });
+          
+          if (signupError) {
+            console.error("User creation failed:", signupError);
+            return false;
+          }
+          
+          // Try logging in again after creating the user
+          const { error: retryError } = await supabase.auth.signInWithPassword({
+            email: user.email,
+            password: user.password
+          });
+          
+          if (retryError) {
+            console.error("Retry login failed:", retryError);
+            
+            // Fall back to local authentication
+            toast({
+              variant: "destructive",
+              title: "Supabase Auth Warning",
+              description: "Using local auth mode. Some features may be limited.",
+            });
+          } else {
+            console.log("Retry login successful");
+          }
         } else {
           console.log("Supabase login successful");
         }
