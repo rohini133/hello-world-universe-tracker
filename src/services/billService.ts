@@ -1,6 +1,5 @@
-
 import { v4 as uuidv4 } from 'uuid';
-import { CartItem, Bill, BillWithItems, BillItem } from '@/types/supabase-extensions';
+import { CartItem, Bill, BillWithItems, BillItem, BillItemWithProduct } from '@/types/supabase-extensions';
 import { supabase } from '@/integrations/supabase/client';
 import { decreaseStock } from './productService';
 import { toast } from '@/components/ui/use-toast';
@@ -84,7 +83,7 @@ export const createBill = async (
     console.log("Bill created successfully:", billResult);
     
     // Create bill items
-    const billItems: BillItem[] = [];
+    const billItems: BillItemWithProduct[] = [];
     
     // Insert bill items into database one by one
     for (const item of cartItems) {
@@ -121,8 +120,8 @@ export const createBill = async (
       } else {
         console.log("Bill item created successfully:", itemResult);
         
-        // Convert from database schema to application schema
-        const billItem: BillItem = {
+        // Create a BillItemWithProduct object that matches the expected type
+        const billItemWithProduct: BillItemWithProduct = {
           id: itemResult.id,
           billId: itemResult.bill_id,
           productId: itemResult.product_id,
@@ -131,10 +130,10 @@ export const createBill = async (
           discountPercentage: itemResult.discount_percentage,
           quantity: itemResult.quantity,
           total: itemResult.total,
-          product: item.product
+          product: item.product  // Include the product information from the cart item
         };
         
-        billItems.push(billItem);
+        billItems.push(billItemWithProduct);
       }
       
       // Decrease stock for the product
@@ -163,7 +162,7 @@ export const createBill = async (
       paymentMethod,
       status: billResult.status,
       userId: billResult.user_id,
-      items: billItems
+      items: billItems  // Now this is correctly typed as BillItemWithProduct[]
     };
     
     return billWithItems;
