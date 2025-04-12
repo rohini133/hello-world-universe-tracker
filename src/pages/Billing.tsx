@@ -92,7 +92,7 @@ const Billing = () => {
     setCurrentBill(null);
   };
 
-  const handleCheckout = () => {
+  const handleCheckout = async () => {
     if (cartItems.length === 0) {
       toast({
         title: "Cart is empty",
@@ -103,7 +103,7 @@ const Billing = () => {
     }
 
     try {
-      const newBill = createBill(
+      const newBill = await createBill(
         cartItems,
         customerName || undefined,
         customerPhone || undefined,
