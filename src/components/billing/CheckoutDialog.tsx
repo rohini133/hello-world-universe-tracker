@@ -60,7 +60,7 @@ export const CheckoutDialog = ({
   const [isDownloading, setIsDownloading] = useState(false);
   const { toast } = useToast();
 
-  // Determine if we're in pre-checkout (collecting info) or post-checkout (showing receipt options)
+  // Determine if we're in post-checkout (showing receipt options)
   const isPostCheckout = !!bill;
   
   const handleCustomerInfoChange = (field: string, value: string) => {

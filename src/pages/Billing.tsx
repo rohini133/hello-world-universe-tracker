@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from "react";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { ProductSearch } from "@/components/billing/ProductSearch";
@@ -84,7 +85,7 @@ function Billing() {
       
       setCurrentBill(newBill);
       
-      setIsCheckoutOpen(true);
+      // Don't close the dialog, just let it transition to receipt options
       
       clearCart();
 
@@ -111,6 +112,7 @@ function Billing() {
         phone: "",
         email: "",
       });
+      setPaymentMethod("cash");
     }
   };
 
