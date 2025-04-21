@@ -81,10 +81,12 @@ function Billing() {
       };
 
       const newBill = await createBill(billData);
+      
       setCurrentBill(newBill);
-      clearCart();
-
+      
       setIsCheckoutOpen(true);
+      
+      clearCart();
 
       toast({
         title: "Bill created",
@@ -104,6 +106,11 @@ function Billing() {
     setIsCheckoutOpen(open);
     if (!open) {
       setCurrentBill(null);
+      setCustomerInfo({
+        name: "",
+        phone: "",
+        email: "",
+      });
     }
   };
 
@@ -181,7 +188,7 @@ function Billing() {
       </div>
       
       <CheckoutDialog
-        open={isCheckoutOpen && !!currentBill}
+        open={isCheckoutOpen}
         onOpenChange={handleCloseCheckoutDialog}
         subtotal={subtotal}
         tax={tax}
