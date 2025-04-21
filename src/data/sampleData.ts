@@ -1,3 +1,4 @@
+
 import { Bill, BillWithItems, Product, DashboardStats } from "@/types/supabase-extensions";
 
 export const sampleProducts: Product[] = [
@@ -515,7 +516,8 @@ export const sampleBills: BillWithItems[] = [
         quantity: 2,
         total: (sampleProducts[0].price * 2) * (1 - (sampleProducts[0].discountPercentage / 100)),
         productName: sampleProducts[0].name,
-        product: sampleProducts[0]
+        product: sampleProducts[0],
+        createdAt: "2024-04-20T11:00:00Z" // Adding the required createdAt property
       }
     ],
     createdAt: "2024-04-20T11:00:00Z",
@@ -533,3 +535,27 @@ export const sampleBills: BillWithItems[] = [
     customerEmail: "johndoe@example.com",
   }
 ];
+
+// Adding the missing sampleDashboardStats export
+export const sampleDashboardStats: DashboardStats = {
+  totalProducts: sampleProducts.length,
+  totalSales: 150000,
+  lowStock: sampleProducts.filter(p => p.stock > 0 && p.stock <= p.lowStockThreshold).length,
+  recentSales: sampleBills.map(bill => ({
+    id: bill.id,
+    date: bill.createdAt,
+    customer: bill.customerName || "Walk-in Customer",
+    amount: bill.total,
+    items: bill.items.length
+  })),
+  topSellingProducts: [
+    { product: sampleProducts[0], soldCount: 45 },
+    { product: sampleProducts[1], soldCount: 38 },
+    { product: sampleProducts[2], soldCount: 32 },
+    { product: sampleProducts[3], soldCount: 28 },
+    { product: sampleProducts[6], soldCount: 22 }
+  ],
+  todaySales: 32000,
+  outOfStockItems: sampleProducts.filter(p => p.stock === 0).length,
+  lowStockItems: sampleProducts.filter(p => p.stock > 0 && p.stock <= p.lowStockThreshold).length
+};
