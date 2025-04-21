@@ -83,8 +83,8 @@ function Billing() {
       const newBill = await createBill(billData);
       setCurrentBill(newBill);
       clearCart();
-      setIsCheckoutOpen(false);
-      setIsReceiptOpen(true);
+
+      setIsCheckoutOpen(true);
 
       toast({
         title: "Bill created",
@@ -97,6 +97,13 @@ function Billing() {
         description: error.message || "Failed to create bill. Please try again.",
         variant: "destructive",
       });
+    }
+  };
+
+  const handleCloseCheckoutDialog = (open: boolean) => {
+    setIsCheckoutOpen(open);
+    if (!open) {
+      setCurrentBill(null);
     }
   };
 
@@ -174,8 +181,8 @@ function Billing() {
       </div>
       
       <CheckoutDialog
-        open={isCheckoutOpen}
-        onOpenChange={setIsCheckoutOpen}
+        open={isCheckoutOpen && !!currentBill}
+        onOpenChange={handleCloseCheckoutDialog}
         subtotal={subtotal}
         tax={tax}
         total={total}
