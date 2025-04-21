@@ -1,7 +1,7 @@
 
 import { Product } from "@/types/supabase-extensions";
 import { supabase, debugAuthStatus, refreshSession } from "@/integrations/supabase/client";
-import { mapProductToDatabaseProduct } from "./productHelpers";
+import { mapProductToDatabaseProduct, mapDatabaseProductToProduct } from "./productHelpers";
 import { 
   showLowStockNotification, 
   showOutOfStockNotification,
@@ -26,16 +26,11 @@ export const updateProduct = async (updatedProduct: Product): Promise<Product> =
       console.log("Attempting to refresh session...");
       const refreshed = await refreshSession();
       if (!refreshed) {
-        // For temporary fix, check if local auth is available
-        if (localStorage.getItem("isLoggedIn")) {
-          console.log("Using local authentication mode - will still attempt update");
-        } else {
-          throw new Error("Authentication required to update products");
-        }
+        throw new Error("Authentication required to update products");
       }
     }
     
-    // Prepare the product data for Supabase
+    // Prepare the product data for Supabase - remove user_id field
     const productData = mapProductToDatabaseProduct(updatedProduct);
     
     // Update in Supabase with detailed logging
@@ -62,26 +57,8 @@ export const updateProduct = async (updatedProduct: Product): Promise<Product> =
     if (data) {
       console.log("Product successfully updated in Supabase:", data);
       
-      // Create product object from Supabase response
-      const product = {
-        id: data.id,
-        name: data.name,
-        price: data.price,
-        stock: data.stock,
-        brand: data.brand,
-        category: data.category,
-        itemNumber: data.item_number,
-        discountPercentage: data.discount_percentage,
-        lowStockThreshold: data.low_stock_threshold,
-        createdAt: data.created_at,
-        updatedAt: data.updated_at,
-        image: data.image || '',
-        description: data.description || '',
-        size: data.size || null,
-        color: data.color || null
-      };
-      
-      return product;
+      // Use helper function to map database response to Product type
+      return mapDatabaseProductToProduct(data);
     }
     
     throw new Error("Failed to update product: No data returned from database");
@@ -108,13 +85,8 @@ export const addProduct = async (newProduct: Omit<Product, 'id' | 'createdAt' | 
       const refreshed = await refreshSession();
       
       if (!refreshed) {
-        // For temporary fix, check if local auth is available
-        if (localStorage.getItem("isLoggedIn")) {
-          console.log("Using local authentication mode - will still attempt insert");
-        } else {
-          console.warn("No authenticated session found for product addition");
-          throw new Error("Authentication required to add products");
-        }
+        console.warn("No authenticated session found for product addition");
+        throw new Error("Authentication required to add products");
       }
     }
     
@@ -139,20 +111,23 @@ export const addProduct = async (newProduct: Omit<Product, 'id' | 'createdAt' | 
       throw new Error(`Item number ${newProduct.itemNumber} already exists. Please use a unique item number.`);
     }
     
-    // Prepare product data for Supabase
+    // Prepare product data for Supabase - remove user_id field
     const productData = {
       name: newProduct.name,
       price: newProduct.price,
-      stock: newProduct.stock,
+      stock: newProduct.stock || 0,
       brand: newProduct.brand,
       category: newProduct.category,
       item_number: newProduct.itemNumber,
       discount_percentage: newProduct.discountPercentage || 0,
       low_stock_threshold: newProduct.lowStockThreshold || 5,
+      buying_price: newProduct.buyingPrice || 0,
       image: newProduct.image || '',
       description: newProduct.description || '',
-      size: newProduct.size,
-      color: newProduct.color
+      color: newProduct.color || null,
+      size: newProduct.size || null,
+      // Remove the user_id field from the insert operation
+      sizes_stock: newProduct.sizes_stock || null  // Make sure to include the sizes_stock field
     };
     
     console.log("Prepared data for Supabase insertion:", productData);
@@ -179,31 +154,61 @@ export const addProduct = async (newProduct: Omit<Product, 'id' | 'createdAt' | 
     if (data) {
       console.log("Product added successfully to Supabase:", data);
       
-      // Create product object from Supabase response
-      const product = {
-        id: data.id,
-        name: data.name,
-        price: data.price,
-        stock: data.stock,
-        brand: data.brand,
-        category: data.category,
-        itemNumber: data.item_number,
-        discountPercentage: data.discount_percentage,
-        lowStockThreshold: data.low_stock_threshold,
-        createdAt: data.created_at,
-        updatedAt: data.updated_at,
-        image: data.image || '',
-        description: data.description || '',
-        size: data.size || null,
-        color: data.color || null
-      };
-      
-      return product;
+      // Use helper function to map database response to Product type
+      return mapDatabaseProductToProduct(data);
     }
     
     throw new Error("Failed to add product: No data returned from database");
   } catch (e) {
     console.error("Error in addProduct:", e);
+    throw e;
+  }
+};
+
+/**
+ * Delete a product from Supabase by ID
+ */
+export const deleteProduct = async (productId: string): Promise<boolean> => {
+  try {
+    console.log(`Deleting product ${productId} from Supabase`);
+    
+    // Check active session first
+    const authStatus = await debugAuthStatus();
+    console.log("Auth status before deleting product:", authStatus);
+    
+    if (!authStatus.isAuthenticated) {
+      console.warn("No authenticated session found for product deletion");
+      
+      // Try to refresh session
+      console.log("Attempting to refresh session...");
+      const refreshed = await refreshSession();
+      if (!refreshed) {
+        throw new Error("Authentication required to delete products");
+      }
+    }
+    
+    // Delete the product from Supabase
+    const { error } = await supabase
+      .from('products')
+      .delete()
+      .eq('id', productId);
+      
+    if (error) {
+      console.error("Error deleting product from Supabase:", error);
+      console.error("Detailed error:", {
+        message: error.message, 
+        code: error.code,
+        details: error.details,
+        hint: error.hint
+      });
+      
+      throw new Error(`Database error: ${error.message}`);
+    }
+    
+    console.log(`Successfully deleted product ${productId} from Supabase`);
+    return true;
+  } catch (e) {
+    console.error("Error in deleteProduct:", e);
     throw e;
   }
 };
@@ -232,23 +237,9 @@ export const decreaseStock = async (productId: string, quantity: number = 1): Pr
     }
     
     if (product.stock < quantity) {
-      showInsufficientStockNotification({
-        id: product.id,
-        name: product.name,
-        price: product.price,
-        stock: product.stock,
-        brand: product.brand,
-        category: product.category,
-        itemNumber: product.item_number,
-        discountPercentage: product.discount_percentage,
-        lowStockThreshold: product.low_stock_threshold,
-        createdAt: product.created_at,
-        updatedAt: product.updated_at,
-        image: product.image || '',
-        description: product.description || '',
-        size: product.size || null,
-        color: product.color || null
-      }, quantity);
+      // Use helper function to map database product to Product type
+      const mappedProduct = mapDatabaseProductToProduct(product);
+      showInsufficientStockNotification(mappedProduct, quantity);
       throw new Error("Insufficient stock");
     }
     
@@ -271,24 +262,8 @@ export const decreaseStock = async (productId: string, quantity: number = 1): Pr
     }
     
     if (data) {
-      // Create the updated product object
-      const updatedProduct = {
-        id: data.id,
-        name: data.name,
-        price: data.price,
-        stock: data.stock,
-        brand: data.brand,
-        category: data.category,
-        itemNumber: data.item_number,
-        discountPercentage: data.discount_percentage,
-        lowStockThreshold: data.low_stock_threshold,
-        createdAt: data.created_at,
-        updatedAt: data.updated_at,
-        image: data.image || '',
-        description: data.description || '',
-        size: data.size || null,
-        color: data.color || null
-      };
+      // Use helper function to map database response to Product type
+      const updatedProduct = mapDatabaseProductToProduct(data);
       
       // Check if stock is low after update
       if (updatedProduct.stock <= updatedProduct.lowStockThreshold && updatedProduct.stock > 0) {
@@ -309,3 +284,24 @@ export const decreaseStock = async (productId: string, quantity: number = 1): Pr
     throw e;
   }
 };
+
+export function buildProductForUpdate(product) {
+  return {
+    name: product.name,
+    brand: product.brand,
+    category: product.category,
+    description: product.description || '',
+    price: product.price,
+    buying_price: product.buyingPrice || 0,
+    discount_percentage: product.discountPercentage || 0,
+    stock: product.stock,
+    low_stock_threshold: product.lowStockThreshold || 5,
+    image: product.image || '',
+    color: product.color || null,
+    size: product.size || null,
+    item_number: product.itemNumber,
+    updated_at: new Date().toISOString(),
+    sizes_stock: product.sizes_stock || null
+    // Removed the user_id field
+  };
+}

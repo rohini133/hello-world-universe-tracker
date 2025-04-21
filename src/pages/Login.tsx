@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { Button } from "@/components/ui/button";
@@ -13,29 +13,35 @@ import { useAuth } from "@/contexts/AuthContext";
 const Login = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const auth = useAuth();
-  const login = auth?.login || (async () => false);
-  const [username, setUsername] = useState("");
+  const { isLoggedIn, login } = useAuth();
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    if (isLoggedIn) {
+      console.log("User is logged in, redirecting to root path");
+      navigate('/', { replace: true });
+    }
+  }, [isLoggedIn, navigate]);
 
   const handleLogin = async () => {
     setIsLoading(true);
     
-    if (!username || !password) {
+    if (!email || !password) {
       toast({
         variant: "destructive",
         title: "Login Failed",
-        description: "Please provide both username and password.",
+        description: "Please provide both email and password.",
       });
       setIsLoading(false);
       return;
     }
     
     try {
-      const success = await login(username, password);
+      const success = await login(email, password);
       if (success) {
-        navigate("/");
+        // Login function now handles the redirection
       }
     } catch (error) {
       toast({
@@ -55,11 +61,7 @@ const Login = () => {
           <div className="grid md:grid-cols-5 min-h-[550px]">
             <div className="login-sidebar md:col-span-2 p-8 flex flex-col justify-between" style={{ backgroundColor: '#ea384c', color: 'white' }}>
               <div>
-                <div className="flex items-center mb-6">
-                  <ShoppingCart className="h-10 w-10 text-white" />
-                  <h1 className="text-2xl font-bold ml-2">Vivaas</h1>
-                </div>
-                <h2 className="text-xl font-bold mb-4">Welcome to the Ultimate Retail Management System</h2>
+                <h2 className="text-xl font-bold mb-4 mt-6">Welcome to the Ultimate Retail Management System</h2>
                 <p className="text-white/80 mb-6">
                   Streamline your operations with our comprehensive platform designed specifically for retail businesses.
                 </p>
@@ -143,12 +145,12 @@ const Login = () => {
                       </div>
                       <div className="space-y-4">
                         <div className="space-y-2">
-                          <Label htmlFor="admin-username">Username</Label>
+                          <Label htmlFor="admin-email">Email</Label>
                           <Input 
-                            id="admin-username" 
-                            placeholder="Enter your username" 
-                            value={username}
-                            onChange={(e) => setUsername(e.target.value)}
+                            id="admin-email" 
+                            placeholder="Enter your email" 
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
                             className="animated-input"
                           />
                         </div>
@@ -197,12 +199,12 @@ const Login = () => {
                       </div>
                       <div className="space-y-4">
                         <div className="space-y-2">
-                          <Label htmlFor="cashier-username">Username</Label>
+                          <Label htmlFor="cashier-email">Email</Label>
                           <Input 
-                            id="cashier-username" 
-                            placeholder="Enter your username" 
-                            value={username}
-                            onChange={(e) => setUsername(e.target.value)}
+                            id="cashier-email" 
+                            placeholder="Enter your email" 
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
                             className="animated-input"
                           />
                         </div>
@@ -238,24 +240,6 @@ const Login = () => {
                     </div>
                   </TabsContent>
                 </Tabs>
-
-                <div className="mt-8 text-center">
-                  <div className="text-sm text-gray-500 space-y-1">
-                    <p className="font-medium">System Users:</p>
-                    <div className="grid grid-cols-2 gap-2 text-xs bg-gray-50 rounded-lg p-3">
-                      <div className="text-left">
-                        <p className="font-semibold text-orange-600">Admin:</p>
-                        <p>Username: rohini25</p>
-                        <p>Password: Rohini@123</p>
-                      </div>
-                      <div className="text-left">
-                        <p className="font-semibold text-blue-600">Cashier:</p>
-                        <p>Username: balaji12</p>
-                        <p>Password: Balaji@25</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
               </div>
             </div>
           </div>

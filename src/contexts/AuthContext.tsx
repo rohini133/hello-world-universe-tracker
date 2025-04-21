@@ -1,31 +1,15 @@
+
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useToast } from "@/components/ui/use-toast";
-import { supabase, checkActiveSession, debugAuthStatus } from "@/integrations/supabase/client";
+import { supabase } from "@/integrations/supabase/client";
 
-// Define fixed users for the system
-const USERS = [
-  {
-    username: "owner",
-    password: "owner@123",
-    role: "admin",
-    name: "Owner",
-    email: "owner@vivaas.com"
-  },
-  {
-    username: "cashier",
-    password: "cashier@123",
-    role: "cashier",
-    name: "Cashier",
-    email: "cashier@vivaas.com"
-  }
-];
-
+// Define context type
 interface AuthContextType {
   isLoggedIn: boolean;
   userRole: string | null;
   userName: string | null;
-  login: (username: string, password: string) => Promise<boolean>;
+  login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
   checkAuthAccess: (requiredRole?: string) => boolean;
 }
@@ -51,9 +35,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const location = useLocation();
   const { toast } = useToast();
   
-  // We don't want to auto-login on the login page
-  const shouldAutoLogin = location.pathname !== "/login";
-
   // Check for active Supabase session on mount and auth state changes
   useEffect(() => {
     // First set up the auth state change listener
@@ -69,13 +50,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           
           if (hasSession) {
             // Retrieve user role and name from localStorage as a fallback
-            const storedRole = localStorage.getItem("userRole");
-            const storedName = localStorage.getItem("username");
+            const storedRole = localStorage.getItem("userRole") || "user";
+            const storedName = localStorage.getItem("username") || session.user.email?.split('@')[0] || "User";
             
-            if (storedRole && storedName) {
-              setUserRole(storedRole);
-              setUserName(storedName);
-            }
+            setUserRole(storedRole);
+            setUserName(storedName);
           } else {
             // If logged out, clear role and name
             setUserRole(null);
@@ -100,13 +79,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       if (hasSession) {
         // Retrieve user role and name from localStorage as a fallback
-        const storedRole = localStorage.getItem("userRole");
-        const storedName = localStorage.getItem("username");
+        const storedRole = localStorage.getItem("userRole") || "user";
+        const storedName = localStorage.getItem("username") || data.session.user.email?.split('@')[0] || "User";
         
-        if (storedRole && storedName) {
-          setUserRole(storedRole);
-          setUserName(storedName);
-        }
+        setUserRole(storedRole);
+        setUserName(storedName);
       }
       
       setIsInitializing(false);
@@ -120,120 +97,76 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
   }, [isLoggedIn]);
 
-  const login = async (username: string, password: string): Promise<boolean> => {
-    // Find user with matching credentials
-    const user = USERS.find(
-      u => u.username === username && u.password === password
-    );
-    
-    if (user) {
-      try {
-        console.log("Logging in with:", user.email);
-        // Log in to Supabase with the corresponding email/password
-        const { data, error } = await supabase.auth.signInWithPassword({
-          email: user.email,
-          password: user.password
-        });
-        
-        if (error) {
-          console.error("Supabase login failed:", error);
-          
-          // Create the user in Supabase if they don't exist
-          const { error: signupError } = await supabase.auth.signUp({
-            email: user.email,
-            password: user.password,
-            options: {
-              data: {
-                full_name: user.name,
-                role: user.role
-              }
-            }
-          });
-          
-          if (signupError) {
-            console.error("User creation failed:", signupError);
-            
-            // For the short-term fix, we'll use local authentication even if Supabase fails
-            localStorage.setItem("isLoggedIn", "true");
-            localStorage.setItem("userRole", user.role);
-            localStorage.setItem("username", user.name);
-            
-            setIsLoggedIn(true);
-            setUserRole(user.role);
-            setUserName(user.name);
-            
-            toast({
-              title: "Local Login",
-              description: "Using local authentication mode due to database connectivity issues.",
-            });
-            
-            return true;
-          }
-          
-          // Try logging in again after creating the user
-          const { error: retryError } = await supabase.auth.signInWithPassword({
-            email: user.email,
-            password: user.password
-          });
-          
-          if (retryError) {
-            console.error("Retry login failed:", retryError);
-            
-            // Fall back to local authentication
-            toast({
-              variant: "destructive",
-              title: "Supabase Auth Warning",
-              description: "Using local auth mode. Some features may be limited.",
-            });
-          } else {
-            console.log("Retry login successful");
-          }
-        } else {
-          console.log("Supabase login successful");
-        }
-        
-        // Store authentication state
-        localStorage.setItem("isLoggedIn", "true");
-        localStorage.setItem("userRole", user.role);
-        localStorage.setItem("username", user.name);
-        
-        // Update state
-        setIsLoggedIn(true);
-        setUserRole(user.role);
-        setUserName(user.name);
-        
-        // Show success notification
-        toast({
-          title: "Login Successful",
-          description: `Welcome back, ${user.name}!`,
-        });
-        
-        // Debug auth status after login
-        setTimeout(() => {
-          debugAuthStatus();
-        }, 500);
-        
-        return true;
-      } catch (err) {
-        console.error("Login error:", err);
+  const login = async (email: string, password: string): Promise<boolean> => {
+    try {
+      // Authenticate with Supabase
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+      
+      if (error) {
+        console.error("Login error:", error.message);
         
         toast({
           variant: "destructive",
-          title: "Login Error",
-          description: "An error occurred during login. Please try again.",
+          title: "Login Failed",
+          description: error.message || "Invalid credentials. Please try again.",
         });
         
         return false;
       }
+      
+      if (!data.session) {
+        console.error("No session returned after login");
+        
+        toast({
+          variant: "destructive",
+          title: "Login Error",
+          description: "No session created. Please try again.",
+        });
+        
+        return false;
+      }
+      
+      console.log("Login successful with email:", email);
+      
+      // Determine role based on email (you could fetch this from a profiles table)
+      // Default to 'cashier' unless it's a specific admin email
+      const role = email.includes("guddu") ? "admin" : "cashier";
+      
+      // Store authentication state
+      localStorage.setItem("isLoggedIn", "true");
+      localStorage.setItem("userRole", role);
+      localStorage.setItem("username", data.user?.email?.split('@')[0] || "User");
+      
+      // Update state
+      setIsLoggedIn(true);
+      setUserRole(role);
+      setUserName(data.user?.email?.split('@')[0] || "User");
+      
+      // Show success notification
+      toast({
+        title: "Login Successful",
+        description: `Welcome back, ${data.user?.email?.split('@')[0] || "User"}!`,
+      });
+      
+      // Redirect to root route which will handle proper dashboard redirection
+      // This fixes the 404 error by using a route that definitely exists
+      navigate("/", { replace: true });
+      
+      return true;
+    } catch (err) {
+      console.error("Login error:", err);
+      
+      toast({
+        variant: "destructive",
+        title: "Login Error",
+        description: "An error occurred during login. Please try again.",
+      });
+      
+      return false;
     }
-    
-    toast({
-      variant: "destructive",
-      title: "Login Failed",
-      description: "Invalid username or password. Please try again.",
-    });
-    
-    return false;
   };
 
   const logout = async () => {

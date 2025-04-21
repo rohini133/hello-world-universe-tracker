@@ -20,8 +20,8 @@ const Settings = () => {
   // General settings
   const [generalSettings, setGeneralSettings] = useState({
     storeName: "Vivaas",
-    storeAddress: "804, Ravivar Peth, Kapad Ganj, Opp. Shani Mandir, Pune - 411002",
-    storePhone: "+91 98906 69994",
+    storeAddress: "Shiv Park Phase 2 Shop No-6-7 Pune Solapur Road Lakshumi Colony Opposite HDFC Bank Near Angle School Pune -412307",
+    storePhone: "+91 96571 71777",
     storeEmail: "info@vivaas.com",
     currency: "INR",
     language: "en",
@@ -39,9 +39,9 @@ const Settings = () => {
   
   // Receipt settings
   const [receiptSettings, setReceiptSettings] = useState({
-    showLogo: true,
+    showLogo: false,
     showStoreInfo: true,
-    showTaxInfo: true,
+    showTaxInfo: false,
     footerText: "Thank you for shopping with us!",
     printAutomatically: false,
     sendReceiptEmail: true,

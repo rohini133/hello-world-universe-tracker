@@ -18,12 +18,12 @@ const Profile = () => {
   
   // Mock user data - in a real app, this would come from API/context
   const [userData, setUserData] = useState({
-    fullName: userName || "Demo User",
-    email: "user@example.com",
-    phone: "+91 98765 43210",
+    fullName: userName || "Cashier",
+    email: "cashier@vivaas.com",
+    phone: "+91 9765971717 || 9657171777",
     role: userRole || "admin",
-    address: "123 Street, City, State",
-    avatar: "/lovable-uploads/59cca976-e10d-409f-b661-124e886e72b7.png" // Use the uploaded image
+    address: "Shiv Park Phase 2 Shop No-6-7 Pune Solapur Road Lakshumi Colony Opp. HDFC Bank Near Angle School Pune-412307 ",
+    avatar: "/lovable-uploads/profile-icon.jpeg" // Use the uploaded image
   });
   
   // Profile update form state

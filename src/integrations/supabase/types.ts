@@ -102,6 +102,7 @@ export type Database = {
       products: {
         Row: {
           brand: string
+          buying_price: number
           category: string
           color: string | null
           created_at: string
@@ -113,12 +114,13 @@ export type Database = {
           low_stock_threshold: number
           name: string
           price: number
-          size: string | null
+          sizes_stock: Json | null
           stock: number
           updated_at: string
         }
         Insert: {
           brand: string
+          buying_price?: number
           category: string
           color?: string | null
           created_at?: string
@@ -130,12 +132,13 @@ export type Database = {
           low_stock_threshold?: number
           name: string
           price: number
-          size?: string | null
+          sizes_stock?: Json | null
           stock?: number
           updated_at?: string
         }
         Update: {
           brand?: string
+          buying_price?: number
           category?: string
           color?: string | null
           created_at?: string
@@ -147,7 +150,7 @@ export type Database = {
           low_stock_threshold?: number
           name?: string
           price?: number
-          size?: string | null
+          sizes_stock?: Json | null
           stock?: number
           updated_at?: string
         }

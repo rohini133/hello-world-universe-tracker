@@ -1,5 +1,5 @@
 
-import { Product } from "@/data/models";
+import { Product } from "@/types/supabase-extensions";
 import { getProductStockStatus } from "@/services/productService";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -20,7 +20,7 @@ export const ProductCard = ({ product, onEdit, onDelete }: ProductCardProps) => 
     currency: "INR",
     maximumFractionDigits: 0,
     currencyDisplay: 'symbol'
-  }).format(product.price).replace('₹', '₹ '); // Add a space after the symbol
+  }).format(product.price).replace('₹', '₹ ');
   
   const discountedPrice = product.discountPercentage > 0 
     ? product.price * (1 - product.discountPercentage / 100) 
@@ -32,8 +32,13 @@ export const ProductCard = ({ product, onEdit, onDelete }: ProductCardProps) => 
         currency: "INR",
         maximumFractionDigits: 0,
         currencyDisplay: 'symbol'
-      }).format(discountedPrice).replace('₹', '₹ ') // Add a space after the symbol
+      }).format(discountedPrice).replace('₹', '₹ ')
     : null;
+
+  // Convert sizes_stock object to array for display
+  const sizesForDisplay = product.sizes_stock
+    ? Object.entries(product.sizes_stock)
+    : [];
 
   return (
     <Card className="product-card overflow-hidden">
@@ -82,14 +87,9 @@ export const ProductCard = ({ product, onEdit, onDelete }: ProductCardProps) => 
           <div className="text-right">{product.itemNumber}</div>
           
           <div className="text-gray-500">Stock</div>
-          <div className="text-right">{product.stock} units</div>
-          
-          {product.size && (
-            <>
-              <div className="text-gray-500">Size</div>
-              <div className="text-right">{product.size}</div>
-            </>
-          )}
+          <div className="text-right">
+            {product.stock} units
+          </div>
           
           {product.color && (
             <>
@@ -98,6 +98,24 @@ export const ProductCard = ({ product, onEdit, onDelete }: ProductCardProps) => 
             </>
           )}
         </div>
+        {sizesForDisplay.length > 0 && (
+          <div className="mt-3 text-sm">
+            <div className="text-gray-600 font-medium">Sizes Available:</div>
+            <ul className="ml-2">
+              {sizesForDisplay.map(([size, stock]) => (
+                <li key={size}>
+                  <span className="font-semibold">{size}</span>
+                  {" - "}
+                  <span>
+                    {stock}{" "}
+                    {Number(stock) === 1 ? "pc" : "pcs"}
+                    {Number(stock) === 0 ? " (Out of Stock)" : ""}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </CardContent>
       <CardFooter className="flex justify-between border-t p-4">
         <Button variant="ghost" size="sm" onClick={() => onEdit(product)}>

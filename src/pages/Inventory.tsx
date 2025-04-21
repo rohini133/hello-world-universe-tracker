@@ -1,8 +1,9 @@
+
 import { useState, useEffect } from "react";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { ProductCard } from "@/components/inventory/ProductCard";
 import { Product } from "@/data/models";
-import { updateProduct } from "@/services/productService";
+import { updateProduct, deleteProduct } from "@/services/productService";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -103,6 +104,10 @@ const Inventory = () => {
     if (!deletingProduct) return;
 
     try {
+      // Attempt to delete from database
+      await deleteProduct(deletingProduct.id);
+      
+      // Update UI after successful deletion
       setFilteredProducts(filtered => filtered.filter(p => p.id !== deletingProduct.id));
       setIsDeleteDialogOpen(false);
       
@@ -111,6 +116,7 @@ const Inventory = () => {
         description: `${deletingProduct.name} has been deleted successfully.`,
       });
     } catch (error) {
+      console.error("Delete error:", error);
       toast({
         title: "Delete failed",
         description: "Failed to delete product. Please try again.",
@@ -154,14 +160,14 @@ const Inventory = () => {
               Add New Product
             </Button>
             
-            <Button 
+            {/* <Button 
               variant="outline" 
               size="icon"
               onClick={() => setIsDebugMode(prev => !prev)}
               className={isDebugMode ? "border-red-400 text-red-500" : ""}
             >
               <Bug className="h-4 w-4" />
-            </Button>
+            </Button> */}
           </div>
         </div>
         
@@ -172,12 +178,12 @@ const Inventory = () => {
         )}
 
         {isAuthenticated === false && (
-          <div className="p-4 mb-6 bg-amber-50 border border-amber-200 rounded-md">
-            <p className="text-amber-800">
+          <div className="">
+            {/*  <div className="p-4 mb-6 bg-amber-50 border border-amber-200 rounded-md"> <p className="text-amber-800">
               <strong>Authentication Notice:</strong> You are not currently authenticated with the database.
               Products will be loaded from local data and changes may not persist.
               Please log out and log back in to reauthenticate.
-            </p>
+            </p> */}
           </div>
         )}
 

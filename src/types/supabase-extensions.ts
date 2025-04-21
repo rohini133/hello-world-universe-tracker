@@ -1,210 +1,140 @@
-import type { Database } from '@/integrations/supabase/types';
-
-// Re-export the Database type for easier imports throughout the app
-export type { Database };
-
-// Raw database types (with snake_case)
-type RawProduct = Database['public']['Tables']['products']['Row'];
-type RawBill = Database['public']['Tables']['bills']['Row'];
-type RawBillItem = Database['public']['Tables']['bill_items']['Row'];
-type RawProfile = Database['public']['Tables']['profiles']['Row'];
-
-// Convenience type for Products table with camelCase properties
 export interface Product {
   id: string;
+  createdAt: string;
+  updatedAt?: string;
   name: string;
-  brand: string;
-  category: string;
   description: string;
   price: number;
+  buyingPrice: number;
+  quantity: number;  // Required property
+  category: string;
+  brand: string;
+  imageUrl: string;  // Required property
+  userId: string;    // Required property
+  
+  // Properties also used in the app
   discountPercentage: number;
   stock: number;
   lowStockThreshold: number;
   image: string;
-  size?: string;
   color?: string;
   itemNumber: string;
-  createdAt: string;
-  updatedAt: string;
+  sizes_stock?: Record<string, number>; // Optional sizes_stock field for multiple sizes/stock
 }
 
-// Convert from snake_case database model to camelCase interface
-export function mapRawProductToProduct(raw: RawProduct): Product {
-  return {
-    id: raw.id,
-    name: raw.name,
-    brand: raw.brand,
-    category: raw.category,
-    description: raw.description,
-    price: raw.price,
-    discountPercentage: raw.discount_percentage,
-    stock: raw.stock,
-    lowStockThreshold: raw.low_stock_threshold,
-    image: raw.image,
-    size: raw.size,
-    color: raw.color,
-    itemNumber: raw.item_number,
-    createdAt: raw.created_at,
-    updatedAt: raw.updated_at
-  };
-}
-
-// Convert from camelCase interface to snake_case database model
-export function mapProductToRawProduct(product: Product): RawProduct {
-  return {
-    id: product.id,
-    name: product.name,
-    brand: product.brand,
-    category: product.category,
-    description: product.description,
-    price: product.price,
-    discount_percentage: product.discountPercentage,
-    stock: product.stock,
-    low_stock_threshold: product.lowStockThreshold,
-    image: product.image,
-    size: product.size,
-    color: product.color,
-    item_number: product.itemNumber,
-    created_at: product.createdAt,
-    updated_at: product.updatedAt
-  };
-}
-
-// Convenience type for Bills table with camelCase properties
-export interface Bill {
-  id: string;
-  subtotal: number;
-  tax: number;
-  total: number;
-  customerName?: string;
-  customerPhone?: string;
-  customerEmail?: string;
-  paymentMethod: string;
-  createdAt: string;
-  status: string;
-  userId: string;
-  items?: BillItemWithProduct[]; // Optional for extended bill with items
-}
-
-// Convert from snake_case database model to camelCase interface
-export function mapRawBillToBill(raw: RawBill): Bill {
-  return {
-    id: raw.id,
-    subtotal: raw.subtotal,
-    tax: raw.tax,
-    total: raw.total,
-    customerName: raw.customer_name,
-    customerPhone: raw.customer_phone,
-    customerEmail: raw.customer_email,
-    paymentMethod: raw.payment_method,
-    createdAt: raw.created_at,
-    status: raw.status,
-    userId: raw.user_id
-  };
-}
-
-// Convert from camelCase interface to snake_case database model
-export function mapBillToRawBill(bill: Bill): RawBill {
-  return {
-    id: bill.id,
-    subtotal: bill.subtotal,
-    tax: bill.tax,
-    total: bill.total,
-    customer_name: bill.customerName,
-    customer_phone: bill.customerPhone,
-    customer_email: bill.customerEmail,
-    payment_method: bill.paymentMethod,
-    created_at: bill.createdAt,
-    status: bill.status,
-    user_id: bill.userId
-  };
-}
-
-// Convenience type for Bill Items table
 export interface BillItem {
   id: string;
+  createdAt: string;
   billId: string;
   productId: string;
-  productPrice: number;
-  discountPercentage: number;
   quantity: number;
-  total: number;
-  productName: string;
+  productPrice: number;
+  productName?: string;
+  discountPercentage?: number;
+  total?: number;
 }
 
-// Convert from snake_case database model to camelCase interface
-export function mapRawBillItemToBillItem(raw: RawBillItem): BillItem {
-  return {
-    id: raw.id,
-    billId: raw.bill_id,
-    productId: raw.product_id,
-    productPrice: raw.product_price,
-    discountPercentage: raw.discount_percentage,
-    quantity: raw.quantity,
-    total: raw.total,
-    productName: raw.product_name
-  };
-}
-
-// Extended bill item type with product details
 export interface BillItemWithProduct extends BillItem {
   product: Product;
 }
 
-// Extended bill type with items included
+export interface Bill {
+  id: string;
+  createdAt: string;
+  status: string;
+  userId: string;
+  
+  // Add discount properties to Bill interface
+  discountAmount?: number;
+  discountValue?: number;
+  discountType?: "percent" | "amount";
+  
+  // Add customer properties
+  customerName?: string;
+  customerPhone?: string;
+  customerEmail?: string;
+  
+  // Add financial properties
+  subtotal?: number;
+  tax?: number;
+  total?: number;
+  paymentMethod?: string;
+  
+  items?: BillItemWithProduct[]; // Optional for extended bill with items
+}
+
 export interface BillWithItems extends Bill {
   items: BillItemWithProduct[];
+  subtotal: number;
+  tax: number;
+  total: number;
+  paymentMethod: string;
 }
 
-// Convenience type for Profiles table
-export interface Profile {
-  id: string;
-  fullName?: string;
-  avatarUrl?: string;
-  role: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-// Convert from snake_case database model to camelCase interface
-export function mapRawProfileToProfile(raw: RawProfile): Profile {
-  return {
-    id: raw.id,
-    fullName: raw.full_name,
-    avatarUrl: raw.avatar_url,
-    role: raw.role,
-    createdAt: raw.created_at,
-    updatedAt: raw.updated_at
-  };
-}
-
-// Extended product type with calculated fields
-export interface ProductWithStatus extends Product {
-  stockStatus: 'in-stock' | 'low-stock' | 'out-of-stock';
-}
-
-// Custom CartItem type that matches your current model
 export interface CartItem {
   product: Product;
   quantity: number;
+  selectedSize?: string; // Which size was selected for this item (for size-stocked products)
 }
 
-// Define the type for authentication roles
-export type UserRole = 'admin' | 'cashier';
+export interface DashboardStats {
+  totalProducts: number;
+  totalSales: number;
+  lowStock: number;
+  recentSales: any[];
+  topSellingProducts: Array<{product: Product; soldCount: number}>;
+  todaySales?: number;
+  outOfStockItems?: number;
+  lowStockItems: number; // Adding the missing property
+}
 
-// Define customer information type
+export interface ProductWithStatus extends Product {
+  status: 'in-stock' | 'low-stock' | 'out-of-stock';
+}
+
+export interface Profile {
+  id: string;
+  fullName?: string;
+  role: string;
+  avatarUrl?: string;
+  createdAt: string;
+  updatedAt?: string;
+}
+
 export interface CustomerInfo {
   name?: string;
   phone?: string;
   email?: string;
 }
 
-// Dashboard statistics type
-export interface DashboardStats {
-  totalSales: number;
-  todaySales: number;
-  lowStockItems: number;
-  outOfStockItems: number;
-  recentSales: BillWithItems[];
-  topSellingProducts: { product: Product; soldCount: number }[];
+export type UserRole = 'admin' | 'manager' | 'cashier';
+
+export function mapRawBillToBill(rawBill: any): Bill {
+  return {
+    id: rawBill.id,
+    createdAt: rawBill.created_at,
+    status: rawBill.status,
+    userId: rawBill.user_id,
+    customerName: rawBill.customer_name,
+    customerPhone: rawBill.customer_phone,
+    customerEmail: rawBill.customer_email,
+    subtotal: rawBill.subtotal,
+    tax: rawBill.tax,
+    total: rawBill.total,
+    paymentMethod: rawBill.payment_method
+  };
+}
+
+export function mapRawBillItemToBillItem(rawItem: any): BillItem {
+  return {
+    id: rawItem.id,
+    createdAt: rawItem.created_at || new Date().toISOString(),
+    billId: rawItem.bill_id,
+    productId: rawItem.product_id,
+    quantity: rawItem.quantity,
+    productPrice: rawItem.product_price,
+    productName: rawItem.product_name,
+    discountPercentage: rawItem.discount_percentage,
+    total: rawItem.total
+  };
 }

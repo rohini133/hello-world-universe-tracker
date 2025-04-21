@@ -1,7 +1,7 @@
 
 import { Bell, LogOut, MenuIcon, ShoppingCart, User, Settings } from "lucide-react";
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -18,6 +18,7 @@ import { NotificationsPanel } from "@/components/notifications/NotificationsPane
 export const Header = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { isLoggedIn, userRole, userName, logout } = useAuth();
+  const location = useLocation();
 
   // Helper function to check if a navigation item should be shown
   const shouldShowNavItem = (item: string): boolean => {
@@ -25,10 +26,15 @@ export const Header = () => {
     
     // Cashiers can only access dashboard and billing
     if (userRole === "cashier") {
-      return item === "dashboard" || item === "billing";
+      return item === "dashboard" || item === "billing" || item === "billhistory";
     }
     
     return true;
+  };
+
+  // Helper function to check if a link is active
+  const isActive = (path: string): boolean => {
+    return location.pathname === path;
   };
 
   return (
@@ -38,8 +44,7 @@ export const Header = () => {
           <div className="flex">
             <div className="flex-shrink-0 flex items-center">
               <Link to="/" className="flex items-center">
-                <ShoppingCart className="h-8 w-8 text-primary dark:text-white" />
-                <span className="ml-2 text-xl font-bold text-gray-800 dark:text-white">Vivaas</span>
+                <img src="/lovable-uploads/a39b7d8e-abfd-4e6c-8269-2f30e7cab097.png" alt="Vivaas Logo" className="h-14" />
               </Link>
             </div>
             {isLoggedIn && (
@@ -47,7 +52,11 @@ export const Header = () => {
                 {shouldShowNavItem("dashboard") && (
                   <Link
                     to="/"
-                    className="inline-flex items-center px-1 pt-1 border-b-2 border-primary text-sm font-medium text-gray-900 dark:text-gray-100"
+                    className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
+                      isActive("/") 
+                        ? "border-primary text-gray-900 dark:text-gray-100" 
+                        : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-300 dark:hover:text-white dark:hover:border-gray-600"
+                    }`}
                   >
                     Dashboard
                   </Link>
@@ -55,7 +64,11 @@ export const Header = () => {
                 {shouldShowNavItem("billing") && (
                   <Link
                     to="/billing"
-                    className="inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-300 dark:hover:text-white dark:hover:border-gray-600"
+                    className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
+                      isActive("/billing") 
+                        ? "border-primary text-gray-900 dark:text-gray-100" 
+                        : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-300 dark:hover:text-white dark:hover:border-gray-600"
+                    }`}
                   >
                     Billing
                   </Link>
@@ -63,17 +76,25 @@ export const Header = () => {
                 {shouldShowNavItem("inventory") && (
                   <Link
                     to="/inventory"
-                    className="inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-300 dark:hover:text-white dark:hover:border-gray-600"
+                    className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
+                      isActive("/inventory") 
+                        ? "border-primary text-gray-900 dark:text-gray-100" 
+                        : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-300 dark:hover:text-white dark:hover:border-gray-600"
+                    }`}
                   >
                     Inventory
                   </Link>
                 )}
-                {shouldShowNavItem("products") && (
+                {shouldShowNavItem("billhistory") && (
                   <Link
-                    to="/products"
-                    className="inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-300 dark:hover:text-white dark:hover:border-gray-600"
+                    to="/billhistory"
+                    className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
+                      isActive("/billhistory") 
+                        ? "border-primary text-gray-900 dark:text-gray-100" 
+                        : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-300 dark:hover:text-white dark:hover:border-gray-600"
+                    }`}
                   >
-                    Products
+                    Bill History
                   </Link>
                 )}
               </nav>
@@ -157,7 +178,11 @@ export const Header = () => {
               {shouldShowNavItem("dashboard") && (
                 <Link
                   to="/"
-                  className="block pl-3 pr-4 py-2 border-l-4 border-primary text-base font-medium text-primary bg-primary-50 dark:bg-gray-800 dark:text-white"
+                  className={`block pl-3 pr-4 py-2 border-l-4 text-base font-medium ${
+                    isActive("/") 
+                      ? "border-primary text-primary bg-primary-50 dark:bg-gray-800 dark:text-white" 
+                      : "border-transparent text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-white"
+                  }`}
                 >
                   Dashboard
                 </Link>
@@ -165,7 +190,11 @@ export const Header = () => {
               {shouldShowNavItem("billing") && (
                 <Link
                   to="/billing"
-                  className="block pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-white"
+                  className={`block pl-3 pr-4 py-2 border-l-4 text-base font-medium ${
+                    isActive("/billing") 
+                      ? "border-primary text-primary bg-primary-50 dark:bg-gray-800 dark:text-white" 
+                      : "border-transparent text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-white"
+                  }`}
                 >
                   Billing
                 </Link>
@@ -173,17 +202,25 @@ export const Header = () => {
               {shouldShowNavItem("inventory") && (
                 <Link
                   to="/inventory"
-                  className="block pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-white"
+                  className={`block pl-3 pr-4 py-2 border-l-4 text-base font-medium ${
+                    isActive("/inventory") 
+                      ? "border-primary text-primary bg-primary-50 dark:bg-gray-800 dark:text-white" 
+                      : "border-transparent text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-white"
+                  }`}
                 >
                   Inventory
                 </Link>
               )}
-              {shouldShowNavItem("products") && (
+              {shouldShowNavItem("billhistory") && (
                 <Link
-                  to="/products"
-                  className="block pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-white"
+                  to="/billhistory"
+                  className={`block pl-3 pr-4 py-2 border-l-4 text-base font-medium ${
+                    isActive("/billhistory") 
+                      ? "border-primary text-primary bg-primary-50 dark:bg-gray-800 dark:text-white" 
+                      : "border-transparent text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-white"
+                  }`}
                 >
-                  Products
+                  Bill History
                 </Link>
               )}
             </div>

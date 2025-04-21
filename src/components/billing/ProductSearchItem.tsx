@@ -1,94 +1,48 @@
 
-import { Product } from "@/data/models";
-import { getProductStockStatus } from "@/services/productService";
+import React, { useState } from "react";
+import { Product } from "@/types/supabase-extensions";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { SizeSelector } from "./SizeSelector";
 
 interface ProductSearchItemProps {
   product: Product;
-  onAddToCart: (product: Product) => void;
+  onAddToCart: (product: Product, size?: string) => void;
 }
 
 export const ProductSearchItem = ({ product, onAddToCart }: ProductSearchItemProps) => {
-  const stockStatus = getProductStockStatus(product);
-  const formattedPrice = new Intl.NumberFormat("en-IN", {
-    style: "currency",
-    currency: "INR",
-    maximumFractionDigits: 0,
-    currencyDisplay: 'symbol'
-  }).format(product.price).replace('₹', '₹ '); // Add a space after the symbol
+  const hasSizes = product.sizes_stock && Object.keys(product.sizes_stock).length > 0;
   
-  const discountedPrice = product.discountPercentage > 0 
-    ? product.price * (1 - product.discountPercentage / 100) 
-    : null;
-    
-  const formattedDiscountedPrice = discountedPrice 
-    ? new Intl.NumberFormat("en-IN", {
-        style: "currency",
-        currency: "INR",
-        maximumFractionDigits: 0,
-        currencyDisplay: 'symbol'
-      }).format(discountedPrice).replace('₹', '₹ ') // Add a space after the symbol
-    : null;
+  const handleAddToCart = () => {
+    if (!hasSizes) {
+      onAddToCart(product);
+    }
+  };
+
+  const handleSizeSelect = (selectedSize: string) => {
+    onAddToCart(product, selectedSize);
+  };
 
   return (
-    <div className="flex items-center justify-between p-4 border rounded-md mb-2">
-      <div className="flex items-center">
-        <div className="h-12 w-12 rounded-md overflow-hidden flex-shrink-0">
-          <img 
-            src={product.image || 'https://placehold.co/400x300?text=No+Image'} 
-            alt={product.name} 
-            className="h-full w-full object-cover"
-            onError={(e) => {
-              e.currentTarget.src = 'https://placehold.co/400x300?text=No+Image';
-            }}
-          />
-        </div>
-        <div className="ml-4">
-          <h3 className="font-medium text-gray-900">{product.name}</h3>
-          <div className="text-sm text-gray-500">
-            {product.brand} • Item #{product.itemNumber}
-          </div>
-          <div className="flex items-center mt-1">
-            {discountedPrice ? (
-              <>
-                <span className="font-medium text-gray-900">{formattedDiscountedPrice}</span>
-                <span className="ml-2 text-sm line-through text-gray-500">{formattedPrice}</span>
-                <Badge variant="destructive" className="ml-2">-{product.discountPercentage}%</Badge>
-              </>
-            ) : (
-              <span className="font-medium text-gray-900">{formattedPrice}</span>
-            )}
-          </div>
+    <div className="flex items-center justify-between border rounded p-2">
+      <div>
+        <div className="font-semibold">{product.name}</div>
+        <div className="text-xs text-gray-500">
+          {product.brand} • {product.category}
         </div>
       </div>
-      <div className="flex flex-col items-end">
-        <div className="mb-2">
-          {stockStatus === "in-stock" && (
-            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-              In Stock ({product.stock})
-            </Badge>
-          )}
-          {stockStatus === "low-stock" && (
-            <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">
-              Low Stock ({product.stock})
-            </Badge>
-          )}
-          {stockStatus === "out-of-stock" && (
-            <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">
-              Out of Stock
-            </Badge>
-          )}
-        </div>
-        <Button
-          variant="outline"
-          size="sm"
-          disabled={stockStatus === "out-of-stock"}
-          onClick={() => onAddToCart(product)}
-          style={{ borderColor: '#ea384c', color: '#ea384c' }}
-        >
-          Add to Cart
-        </Button>
+      <div>
+        {hasSizes ? (
+          <SizeSelector product={product} onSizeSelect={handleSizeSelect} />
+        ) : (
+          <Button 
+            size="sm"
+            onClick={handleAddToCart}
+            disabled={product.stock <= 0}
+          >
+            {product.stock > 0 ? "Add" : "Out of Stock"}
+          </Button>
+        )}
       </div>
     </div>
   );

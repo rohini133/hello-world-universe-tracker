@@ -260,7 +260,7 @@ export function AdminPanel() {
         </div>
       </div>
 
-      <Tabs defaultValue="products" className="space-y-4">
+      <Tabs defaultValue="sales" className="space-y-4">
         <TabsList className="grid sm:grid-cols-3 grid-cols-1 w-full max-w-md mb-2">
           <TabsTrigger value="products" className="flex items-center">
             <ClipboardList className="mr-2 h-4 w-4" />

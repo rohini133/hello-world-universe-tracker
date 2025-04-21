@@ -1,8 +1,9 @@
+
 import { useState, useEffect } from "react";
 import { useToast } from "@/components/ui/use-toast";
-import { getBills } from "@/services/billService";
+import { getBills, deleteBill } from "@/services/billService";
 import { Bill } from "@/data/models";
-import { Search } from "lucide-react";
+import { Search, Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { 
   Table, 
@@ -13,6 +14,17 @@ import {
   TableRow 
 } from "@/components/ui/table";
 import { formatDistanceToNow } from "date-fns";
+import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface BillHistoryListProps {
   onSelectBill: (bill: Bill) => void;
@@ -24,25 +36,28 @@ export const BillHistoryList = ({ onSelectBill, selectedBillId }: BillHistoryLis
   const [filteredBills, setFilteredBills] = useState<Bill[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const [billToDelete, setBillToDelete] = useState<Bill | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const { toast } = useToast();
 
-  useEffect(() => {
-    const fetchBills = async () => {
-      try {
-        const data = await getBills();
-        setBills(data);
-        setFilteredBills(data);
-      } catch (error) {
-        toast({
-          title: "Failed to load bills",
-          description: "There was an error loading the bill history.",
-          variant: "destructive",
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
+  const fetchBills = async () => {
+    try {
+      setIsLoading(true);
+      const data = await getBills();
+      setBills(data);
+      setFilteredBills(data);
+    } catch (error) {
+      toast({
+        title: "Failed to load bills",
+        description: "There was an error loading the bill history.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchBills();
   }, [toast]);
 
@@ -70,6 +85,41 @@ export const BillHistoryList = ({ onSelectBill, selectedBillId }: BillHistoryLis
       maximumFractionDigits: 0,
       currencyDisplay: 'symbol'
     }).format(amount).replace('₹', '₹ '); // Add a space after the symbol
+  };
+
+  const handleDelete = async () => {
+    if (!billToDelete) return;
+
+    try {
+      await deleteBill(billToDelete.id);
+      
+      // Remove from state
+      const updatedBills = bills.filter(bill => bill.id !== billToDelete.id);
+      setBills(updatedBills);
+      setFilteredBills(
+        filteredBills.filter(bill => bill.id !== billToDelete.id)
+      );
+      
+      // If the deleted bill was selected, clear selection
+      if (selectedBillId === billToDelete.id) {
+        onSelectBill(null);
+      }
+
+      toast({
+        title: "Bill deleted",
+        description: `Bill #${billToDelete.id} has been deleted.`,
+      });
+    } catch (error) {
+      console.error("Delete bill error:", error);
+      toast({
+        title: "Delete failed",
+        description: "Failed to delete bill. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setBillToDelete(null);
+      setIsDeleteDialogOpen(false);
+    }
   };
 
   return (
@@ -106,33 +156,62 @@ export const BillHistoryList = ({ onSelectBill, selectedBillId }: BillHistoryLis
                 <TableHead>Customer</TableHead>
                 <TableHead>Items</TableHead>
                 <TableHead>Total</TableHead>
+                <TableHead className="w-20">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredBills.map((bill) => (
                 <TableRow 
                   key={bill.id}
-                  className={`cursor-pointer hover:bg-red-50 ${
+                  className={`hover:bg-red-50 ${
                     selectedBillId === bill.id ? "bg-red-100 hover:bg-red-100" : ""
                   }`}
-                  onClick={() => onSelectBill(bill)}
                 >
-                  <TableCell className="font-medium">{bill.id}</TableCell>
-                  <TableCell>
+                  <TableCell 
+                    className="font-medium cursor-pointer"
+                    onClick={() => onSelectBill(bill)}
+                  >{bill.id}</TableCell>
+                  <TableCell 
+                    className="cursor-pointer"
+                    onClick={() => onSelectBill(bill)}
+                  >
                     {new Date(bill.createdAt).toLocaleDateString()}
                     <div className="text-xs text-gray-500">
                       {formatDistanceToNow(new Date(bill.createdAt), { addSuffix: true })}
                     </div>
                   </TableCell>
-                  <TableCell>
+                  <TableCell 
+                    className="cursor-pointer"
+                    onClick={() => onSelectBill(bill)}
+                  >
                     {bill.customerName || "Walk-in Customer"}
                     {bill.customerPhone && (
                       <div className="text-xs text-gray-500">{bill.customerPhone}</div>
                     )}
                   </TableCell>
-                  <TableCell>{bill.items.length} items</TableCell>
-                  <TableCell className="font-semibold text-[#ea384c]">
+                  <TableCell 
+                    className="cursor-pointer"
+                    onClick={() => onSelectBill(bill)}
+                  >{bill.items.length} items</TableCell>
+                  <TableCell 
+                    className="font-semibold text-[#ea384c] cursor-pointer"
+                    onClick={() => onSelectBill(bill)}
+                  >
                     {formatCurrency(bill.total)}
+                  </TableCell>
+                  <TableCell>
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      className="text-red-500 hover:text-red-600 hover:bg-red-50 p-2 h-8 w-8"
+                      onClick={() => {
+                        setBillToDelete(bill);
+                        setIsDeleteDialogOpen(true);
+                      }}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      <span className="sr-only">Delete</span>
+                    </Button>
                   </TableCell>
                 </TableRow>
               ))}
@@ -140,6 +219,28 @@ export const BillHistoryList = ({ onSelectBill, selectedBillId }: BillHistoryLis
           </Table>
         </div>
       )}
+
+      {/* Delete Bill Confirmation */}
+      <AlertDialog
+        open={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete bill #{billToDelete?.id}. This action
+              cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setBillToDelete(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-red-600 hover:bg-red-700">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

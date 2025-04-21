@@ -5,18 +5,38 @@ import { Button } from "@/components/ui/button";
 import { Printer, Download, MessageSquare, Loader2 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { sendBillToWhatsApp } from "@/services/billService";
-import { generatePDF } from "@/utils/pdfGenerator";
+import { generatePDF, formatBillNumber } from "@/utils/pdfGenerator";
 
 interface BillReceiptProps {
-  bill: Bill;
+  bill: Bill | null;
+  open: boolean;
+  onClose: () => void;
 }
 
-export const BillReceipt = ({ bill }: BillReceiptProps) => {
+export const BillReceipt = ({ bill, open, onClose }: BillReceiptProps) => {
   const [isSendingWhatsApp, setIsSendingWhatsApp] = useState(false);
   const [isPrinting, setIsPrinting] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   const receiptRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+
+  if (!bill) {
+    return (
+      <Card className="h-full flex flex-col">
+        <CardHeader>
+          <CardTitle className="flex justify-between items-center">
+            <span>Receipt</span>
+            <div className="text-sm font-normal text-gray-500">No bill selected</div>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="flex-grow overflow-auto flex items-center justify-center">
+          <div className="text-gray-500 text-center">
+            <p>No bill data available</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-IN', {
@@ -27,23 +47,59 @@ export const BillReceipt = ({ bill }: BillReceiptProps) => {
     }).format(amount).replace('₹', '₹ ');
   };
 
+  const createdAtStr = bill.createdAt && typeof bill.createdAt === 'string'
+    ? bill.createdAt
+    : new Date().toISOString();
+
+  const billDate = new Date(createdAtStr);
+  const isValidDate = !isNaN(billDate.getTime());
+
+  const formattedDate = isValidDate
+    ? billDate.toLocaleDateString('en-IN', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+      })
+    : new Date().toLocaleDateString('en-IN', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+      });
+
+  const formattedTime = isValidDate
+    ? billDate.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })
+    : new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+
+  const simpleBillNumber = formatBillNumber(bill.id);
+
+  const totalMRP = bill.items?.reduce((sum, item) => {
+    const price = item.productPrice || (item.product ? item.product.price : 0);
+    return sum + (price * item.quantity);
+  }, 0) || 0;
+
+  const discountedTotal = bill.total || totalMRP;
+
   const handlePrint = () => {
     if (!receiptRef.current) return;
-    
+
     setIsPrinting(true);
 
     try {
       const billWithItems: BillWithItems = {
         ...bill,
-        items: bill.items || []
+        items: bill.items || [],
+        subtotal: bill.subtotal || 0,
+        tax: bill.tax || 0,
+        total: bill.total || 0,
+        paymentMethod: bill.paymentMethod || 'cash'
       };
-      
+
       const pdfBlob = generatePDF(billWithItems);
-      
+
       const pdfUrl = URL.createObjectURL(pdfBlob);
-      
+
       const printWindow = window.open(pdfUrl, '_blank');
-      
+
       if (printWindow) {
         printWindow.addEventListener('load', () => {
           try {
@@ -66,7 +122,7 @@ export const BillReceipt = ({ bill }: BillReceiptProps) => {
             setIsPrinting(false);
           }
         });
-        
+
         toast({
           title: "Receipt Prepared",
           description: "The receipt has been prepared for printing.",
@@ -77,7 +133,7 @@ export const BillReceipt = ({ bill }: BillReceiptProps) => {
           description: "Could not open print window. Please check your browser settings.",
           variant: "destructive",
         });
-        
+
         window.open(pdfUrl, '_blank');
         setIsPrinting(false);
       }
@@ -101,14 +157,18 @@ export const BillReceipt = ({ bill }: BillReceiptProps) => {
       });
       return;
     }
-    
+
     setIsSendingWhatsApp(true);
     try {
       const billWithItems: BillWithItems = {
         ...bill,
-        items: bill.items || []
+        items: bill.items || [],
+        subtotal: bill.subtotal || 0,
+        tax: bill.tax || 0,
+        total: bill.total || 0,
+        paymentMethod: bill.paymentMethod || 'cash'
       };
-      
+
       await sendBillToWhatsApp(billWithItems);
       toast({
         title: "Receipt sent",
@@ -127,30 +187,34 @@ export const BillReceipt = ({ bill }: BillReceiptProps) => {
 
   const handleDownloadPDF = async () => {
     setIsDownloading(true);
-    
+
     try {
       const billWithItems: BillWithItems = {
         ...bill,
-        items: bill.items || []
+        items: bill.items || [],
+        subtotal: bill.subtotal || 0,
+        tax: bill.tax || 0,
+        total: bill.total || 0,
+        paymentMethod: bill.paymentMethod || 'cash'
       };
-      
+
       const pdfBlob = generatePDF(billWithItems);
-      
+
       const url = URL.createObjectURL(pdfBlob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `Vivaas-Receipt-${bill.id}.pdf`;
+      link.download = `Vivaas-Receipt-${simpleBillNumber}.pdf`;
       document.body.appendChild(link);
       link.click();
-      
+
       setTimeout(() => {
         document.body.removeChild(link);
         URL.revokeObjectURL(url);
       }, 100);
-      
+
       toast({
         title: "Receipt Downloaded",
-        description: `Receipt has been downloaded as Vivaas-Receipt-${bill.id}.pdf`,
+        description: `Receipt has been downloaded as Vivaas-Receipt-${simpleBillNumber}.pdf`,
       });
     } catch (error) {
       console.error("Download error:", error);
@@ -172,33 +236,32 @@ export const BillReceipt = ({ bill }: BillReceiptProps) => {
     <Card className="h-full flex flex-col">
       <CardHeader>
         <CardTitle className="flex justify-between items-center">
-          <span>Receipt</span>
-          <div className="text-sm font-normal text-gray-500">Bill #{bill.id}</div>
+          <span></span>
+          <div className="text-sm font-normal text-gray-500">Bill #{simpleBillNumber}</div>
         </CardTitle>
       </CardHeader>
 
       <CardContent className="flex-grow overflow-auto">
         <div ref={receiptRef} className="text-center">
           <img 
-            src="/lovable-uploads/85d83170-b4fe-40bb-962f-890602ddcacc.png" 
+            src="/lovable-uploads/ac58d961-7833-46c0-b5a4-fd5650245900.png"
             alt="Vivaa's Logo" 
             className="h-24 mx-auto mb-2"
           />
-          <div className="text-sm text-gray-600">804, Ravivar Peth, Kapad Ganj</div>
-          <div className="text-sm text-gray-600">Opp. Shani Mandir, Pune - 411002</div>
-          <div className="text-sm text-gray-600">9890669994/9307060539</div>
-          <div className="text-sm text-gray-600">GSTIN: 27AFIFS6956E1ZJ</div>
-          
+          <div className="text-sm text-gray-600">Shiv Park Phase 2 Shop No-6-7 Pune Solapur Road</div>
+          <div className="text-sm text-gray-600">Lakshumi Colony Opp. HDFC Bank Near Angle School, Pune - 412307</div>
+          <div className="text-sm text-gray-600">9657171777 | 9765971717</div>
+
           <div className="border-t border-dashed border-gray-300 my-3"></div>
 
           <div className="text-left">
             <div className="flex justify-between">
-              <div><strong>Bill No:</strong> {bill.id}</div>
-              <div><strong>Date:</strong> {new Date(bill.createdAt).toLocaleDateString()}</div>
+              <div><strong>Bill No:</strong> {simpleBillNumber}</div>
+              <div><strong>Date:</strong> {formattedDate}</div>
             </div>
             <div className="flex justify-between">
               <div><strong>Counter:</strong> 1</div>
-              <div><strong>Time:</strong> {new Date(bill.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
+              <div><strong>Time:</strong> {formattedTime}</div>
             </div>
           </div>
 
@@ -221,43 +284,49 @@ export const BillReceipt = ({ bill }: BillReceiptProps) => {
             </thead>
             <tbody>
               {bill.items && bill.items.map((item, index) => {
-                const mrp = item.product.price;
-                
+                const mrp = item.productPrice || (item.product ? item.product.price : 0);
                 return (
                   <tr key={index} className="border-b border-gray-100">
-                    <td className="py-1">{item.product.name.toUpperCase()}</td>
+                    <td className="py-1">{item.productName || (item.product ? item.product.name.toUpperCase() : "Unknown")}</td>
                     <td className="text-center py-1">{item.quantity}</td>
                     <td className="text-right py-1">{formatCurrency(mrp)}</td>
                     <td className="text-right py-1">{formatCurrency(mrp * item.quantity)}</td>
                   </tr>
                 );
               })}
+              {(!bill.items || bill.items.length === 0) && (
+                <tr>
+                  <td colSpan={4} className="text-center py-3">No items in this bill</td>
+                </tr>
+              )}
             </tbody>
           </table>
+
+          {((bill.discountAmount && bill.discountAmount > 0) || (bill.discountValue && bill.discountValue > 0)) && (
+            <div className="text-left text-sm">
+              <div className="flex justify-between py-1">
+                <span className="text-green-700 font-medium">
+                  Discount
+                </span>
+                <span className="text-green-700 font-medium">
+                  - {formatCurrency(bill.discountAmount || 0)}
+                </span>
+              </div>
+            </div>
+          )}
 
           <div className="text-left text-sm">
             <div className="flex justify-between py-1 border-t border-gray-200">
               <span><strong>Qty:</strong> {bill.items?.reduce((sum, item) => sum + item.quantity, 0) || 0}</span>
-              <span><strong>Total MRP:</strong> {formatCurrency(bill.items?.reduce((sum, item) => sum + (item.product.price * item.quantity), 0) || 0)}</span>
+              <span><strong>Total:</strong> {formatCurrency(discountedTotal)}</span>
             </div>
             <div className="flex justify-between py-1 font-bold">
               <span>Total:</span>
-              <span>{formatCurrency(bill.total)}</span>
+              <span>{formatCurrency(bill.total || 0)}</span>
             </div>
           </div>
 
           <div className="border-t border-dashed border-gray-300 my-3"></div>
-          
-          <div className="text-left text-sm">
-            <div className="flex justify-between">
-              <span>
-                {bill.paymentMethod === 'cash' ? 'Cash' : 
-                 bill.paymentMethod === 'card' ? 'Card' : 'UPI'}: {formatCurrency(bill.total)}
-              </span>
-              <span>{new Date(bill.createdAt).toLocaleDateString()}</span>
-            </div>
-            <div>UPI No. 0</div>
-          </div>
 
           <div className="text-center text-xs text-gray-500 mt-4">
             <p>Thank you for shopping with us</p>
@@ -277,12 +346,12 @@ export const BillReceipt = ({ bill }: BillReceiptProps) => {
             )}
             Print Receipt
           </Button>
-          
+
           {bill.customerPhone && (
-            <Button 
-              onClick={handleSendWhatsApp} 
+            <Button
+              onClick={handleSendWhatsApp}
               disabled={isSendingWhatsApp}
-              variant="outline" 
+              variant="outline"
               className="w-full justify-start"
               style={{ borderColor: '#ea384c', color: '#ea384c' }}
             >
@@ -294,9 +363,9 @@ export const BillReceipt = ({ bill }: BillReceiptProps) => {
               Send via WhatsApp
             </Button>
           )}
-          
-          <Button 
-            variant="outline" 
+
+          <Button
+            variant="outline"
             className="w-full justify-start"
             onClick={handleDownloadPDF}
             disabled={isDownloading}

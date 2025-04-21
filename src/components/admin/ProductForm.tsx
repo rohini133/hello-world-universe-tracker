@@ -1,6 +1,5 @@
-
 import { useState, useRef, ChangeEvent, useEffect } from "react";
-import { Product } from "@/data/models";
+import { Product } from "@/types/supabase-extensions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -20,20 +19,24 @@ import { useToast } from "@/components/ui/use-toast";
 import { addProduct, updateProduct } from "@/services/productService";
 import { Loader2, Upload } from "lucide-react";
 import { checkActiveSession, debugAuthStatus } from "@/integrations/supabase/client";
+import { Card, CardContent } from "@/components/ui/card";
+import { SizeStockManager } from "./SizeStockManager";
 
 const productSchema = z.object({
   name: z.string().min(3, "Product name must be at least 3 characters"),
   brand: z.string().min(2, "Brand name must be at least 2 characters"),
   category: z.string().min(2, "Category must be at least 2 characters"),
-  description: z.string().min(10, "Description must be at least 10 characters"),
+  description: z.string().optional(),
   price: z.coerce.number().positive("Price must be positive"),
+  buyingPrice: z.coerce.number().positive("Buying price must be positive"),
   discountPercentage: z.coerce.number().min(0).max(100, "Discount must be between 0 and 100"),
   stock: z.coerce.number().int().positive("Stock must be a positive integer"),
   lowStockThreshold: z.coerce.number().int().positive("Threshold must be a positive integer"),
   image: z.string().url("Must be a valid URL"),
-  size: z.string().optional(),
   color: z.string().optional(),
+  // Removed size
   itemNumber: z.string().min(3, "Item number must be at least 3 characters"),
+  sizes_stock: z.record(z.string(), z.number().int().nonnegative()).optional(),
 });
 
 type ProductFormValues = z.infer<typeof productSchema>;
@@ -62,7 +65,7 @@ export function ProductForm({ product, onSuccess, onCancel }: ProductFormProps) 
       if (!authStatus.isAuthenticated) {
         toast({
           title: "Authentication Required",
-          description: "You need to be logged in to add or edit products. Please log in with owner/owner@123 or cashier/cashier@123.",
+          description: "You need to be logged in to add or edit products.",
           variant: "destructive",
         });
       }
@@ -71,22 +74,26 @@ export function ProductForm({ product, onSuccess, onCancel }: ProductFormProps) 
     checkAuth();
   }, [toast]);
 
-  const form = useForm<z.infer<typeof productSchema>>({
+  const initialSizesStock = product?.sizes_stock || {};
+
+  const form = useForm<ProductFormValues>({
     resolver: zodResolver(productSchema),
     defaultValues: isEditing 
       ? { 
           name: product.name,
           brand: product.brand,
           category: product.category,
-          description: product.description || "",
+          description: product.description,
           price: product.price,
+          buyingPrice: product.buyingPrice || 0,
           discountPercentage: product.discountPercentage,
           stock: product.stock,
           lowStockThreshold: product.lowStockThreshold,
           image: product.image,
-          size: product.size || "",
           color: product.color || "",
+          // size REMOVED
           itemNumber: product.itemNumber,
+          ...(isEditing && product ? { sizes_stock: product.sizes_stock } : { sizes_stock: {} }),
         }
       : {
           name: "",
@@ -94,36 +101,24 @@ export function ProductForm({ product, onSuccess, onCancel }: ProductFormProps) 
           category: "",
           description: "",
           price: 0,
+          buyingPrice: 0,
           discountPercentage: 0,
           stock: 0,
           lowStockThreshold: 5,
           image: "https://placehold.co/400x300?text=Product+Image",
-          size: "",
           color: "",
+          // size REMOVED
           itemNumber: `ITM${Math.floor(Math.random() * 10000)}`,
+          sizes_stock: {}
         }
   });
 
-  const handleSubmit = async (values: z.infer<typeof productSchema>) => {
-    console.log("Submitting product form...", values);
-    
-    const isActive = await checkActiveSession();
-    if (!isActive) {
-      console.log("No active session - attempting to use local fallback");
-      // Allow local mode for testing
-      if (localStorage.getItem("isLoggedIn")) {
-        console.log("Using local authentication mode");
-      } else {
-        console.error("Authentication required to submit product form");
-        toast({
-          title: "Authentication Required",
-          description: "You need to be logged in to add or edit products.",
-          variant: "destructive",
-        });
-        return;
-      }
-    }
-    
+  const handleSubmit = async (values: ProductFormValues) => {
+    let sizesStock = values.sizes_stock || {};
+    let totalStock = Object.keys(sizesStock).length > 0
+      ? Object.values(sizesStock).reduce((a, b) => a + b, 0)
+      : values.stock;
+
     setIsSubmitting(true);
     try {
       console.log(`Submitting ${isEditing ? 'update' : 'new'} product to Supabase:`, values);
@@ -137,6 +132,9 @@ export function ProductForm({ product, onSuccess, onCancel }: ProductFormProps) 
         await updateProduct({
           ...product,
           ...values,
+          stock: totalStock,
+          sizes_stock: values.sizes_stock,
+          // size REMOVED
           updatedAt: new Date().toISOString()
         });
         
@@ -153,13 +151,18 @@ export function ProductForm({ product, onSuccess, onCancel }: ProductFormProps) 
           category: values.category,
           description: values.description,
           price: values.price,
+          buyingPrice: values.buyingPrice,
           discountPercentage: values.discountPercentage,
-          stock: values.stock,
+          stock: totalStock,
           lowStockThreshold: values.lowStockThreshold,
           image: values.image,
-          size: values.size || null,
-          color: values.color || null,
+          color: values.color,
+          // size REMOVED
           itemNumber: values.itemNumber,
+          quantity: values.stock,
+          userId: "system",
+          imageUrl: values.image,
+          sizes_stock: values.sizes_stock,
         });
         
         toast({
@@ -219,10 +222,7 @@ export function ProductForm({ product, onSuccess, onCancel }: ProductFormProps) 
   const renderAuthWarning = () => {
     if (isAuthenticated === false) {
       return (
-        <div className="bg-amber-50 border border-amber-200 p-3 rounded-md mb-4">
-          <p className="text-amber-800 font-medium">Authentication Required</p>
-          <p className="text-amber-700 text-sm">You are not currently authenticated with the database. 
-          Please log in with username "owner" and password "owner@123" (admin) or username "cashier" and password "cashier@123" (cashier).</p>
+        <div className="">
         </div>
       );
     }
@@ -329,13 +329,16 @@ export function ProductForm({ product, onSuccess, onCancel }: ProductFormProps) 
           
           <FormField
             control={form.control}
-            name="discountPercentage"
+            name="buyingPrice"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Discount (%)</FormLabel>
+                <FormLabel>Buying Price (₹)</FormLabel>
                 <FormControl>
-                  <Input type="number" min="0" max="100" {...field} />
+                  <Input type="number" step="0.01" min="0" {...field} />
                 </FormControl>
+                <FormDescription>
+                  The price at which the product was purchased
+                </FormDescription>
                 <FormMessage />
               </FormItem>
             )}
@@ -343,12 +346,12 @@ export function ProductForm({ product, onSuccess, onCancel }: ProductFormProps) 
           
           <FormField
             control={form.control}
-            name="stock"
+            name="discountPercentage"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Stock Quantity</FormLabel>
+                <FormLabel>Discount (%)</FormLabel>
                 <FormControl>
-                  <Input type="number" min="0" {...field} />
+                  <Input type="number" min="0" max="100" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -376,12 +379,12 @@ export function ProductForm({ product, onSuccess, onCancel }: ProductFormProps) 
           
           <FormField
             control={form.control}
-            name="size"
+            name="stock"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Size (Optional)</FormLabel>
+                <FormLabel>Total Stock</FormLabel>
                 <FormControl>
-                  <Input placeholder="e.g. S, M, L, XL" {...field} />
+                  <Input type="number" min="0" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -403,6 +406,8 @@ export function ProductForm({ product, onSuccess, onCancel }: ProductFormProps) 
           />
         </div>
         
+        {/* Removed the single-size input field entirely */}
+
         <FormField
           control={form.control}
           name="image"
@@ -457,6 +462,17 @@ export function ProductForm({ product, onSuccess, onCancel }: ProductFormProps) 
             </FormItem>
           )}
         />
+
+        <div>
+          <label className="font-medium block mb-1">Size-wise Stock (Optional)</label>
+          <SizeStockManager
+            value={form.watch("sizes_stock") || {}}
+            onChange={val => form.setValue("sizes_stock", val)}
+          />
+          <div className="text-xs text-gray-500 mt-1">
+            Add multiple sizes and their stocks if applicable. Leave blank for single-size items.
+          </div>
+        </div>
 
         <div className="flex justify-end gap-2 pt-2">
           <Button type="button" variant="outline" onClick={onCancel}>

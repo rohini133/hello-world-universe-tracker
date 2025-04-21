@@ -16,21 +16,21 @@ export const getProducts = async (): Promise<Product[]> => {
     console.log("Auth status before fetching products:", authStatus);
     
     // Fetch products from Supabase
-    const { data, error } = await supabase
+    const { data: productData, error: productError } = await supabase
       .from('products')
       .select('*');
     
-    if (error) {
-      console.error("Error fetching products:", error);
+    if (productError) {
+      console.error("Error fetching products:", productError);
       console.error("Detailed error:", {
-        message: error.message, 
-        code: error.code,
-        details: error.details,
-        hint: error.hint
+        message: productError.message, 
+        code: productError.code,
+        details: productError.details,
+        hint: productError.hint
       });
       
       // Try session refresh if auth error
-      if (error.code === 'PGRST301' || error.message.includes('JWT')) {
+      if (productError.code === 'PGRST301' || productError.message.includes('JWT')) {
         console.log("Attempting to refresh session...");
         const refreshed = await refreshSession();
         if (refreshed) {
@@ -39,22 +39,21 @@ export const getProducts = async (): Promise<Product[]> => {
       }
       
       console.log("Authentication error or database error. Falling back to sample data.");
-      return sampleProducts; // Return sample data as fallback
+      return sampleProducts;
     }
     
-    // If we got data from Supabase, use it
-    if (data && data.length > 0) {
-      console.log(`Successfully fetched ${data.length} products from Supabase`);
-      const mappedProducts = data.map(item => mapDatabaseProductToProduct(item));
-      return mappedProducts;
+    // If we got data from Supabase, map it to our Product type
+    if (productData && productData.length > 0) {
+      console.log(`Successfully fetched ${productData.length} products from Supabase`);
+      return productData.map(item => mapDatabaseProductToProduct(item));
     }
     
     console.log("No products found in database, returning sample data");
-    return sampleProducts; // Return sample data if no products in DB
+    return sampleProducts;
   } catch (e) {
     console.error("Error in getProducts:", e);
     console.log("Falling back to sample data after error");
-    return sampleProducts; // Return sample data after any error
+    return sampleProducts;
   }
 };
 
@@ -66,19 +65,19 @@ export const getProduct = async (id: string): Promise<Product | undefined> => {
     console.log(`Fetching product ${id} directly from Supabase...`);
     
     // Get product from Supabase
-    const { data, error } = await supabase
+    const { data: productData, error: productError } = await supabase
       .from('products')
       .select('*')
       .eq('id', id)
       .single();
       
-    if (error) {
-      console.error("Error fetching product:", error);
+    if (productError) {
+      console.error("Error fetching product:", productError);
       console.error("Detailed error:", {
-        message: error.message, 
-        code: error.code,
-        details: error.details,
-        hint: error.hint
+        message: productError.message, 
+        code: productError.code,
+        details: productError.details,
+        hint: productError.hint
       });
       
       // Fallback to sample data if not found
@@ -86,9 +85,10 @@ export const getProduct = async (id: string): Promise<Product | undefined> => {
       return sampleProducts.find(p => p.id === id);
     }
     
-    if (data) {
+    if (productData) {
       // Map database fields to Product type
-      return mapDatabaseProductToProduct(data);
+      const mappedProduct = mapDatabaseProductToProduct(productData);
+      return mappedProduct;
     }
     
     // Fallback to sample data if not found

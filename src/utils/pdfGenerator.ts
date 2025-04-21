@@ -3,21 +3,32 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
 // Constants for shop information
-const SHOP_NAME = "Vivaa's";
-const SHOP_ADDRESS_LINE1 = "804, Ravivar Peth, Kapad Ganj";
-const SHOP_ADDRESS_LINE2 = "Opp. Shani Mandir, Pune - 411002";
-const SHOP_CONTACT = "9890669994/9307060539";
-const SHOP_GSTIN = "27AFIFS6956E1ZJ";
+const SHOP_NAME = "Vivaas";
+const SHOP_ADDRESS_LINE1 = "Shiv Park Phase 2 Shop No-6-7 Pune Solapur Road";
+const SHOP_ADDRESS_LINE2 = "Lakshumi Colony Opp.HDFC Bank Near Angle School Pune-412307";
+const SHOP_CONTACT = "9657171777 || 9765971717";
 const SHOP_LOGO = "public/lovable-uploads/85d83170-b4fe-40bb-962f-890602ddcacc.png";
+
+/**
+ * Format a UUID-style bill ID to a simple numeric format
+ * @param billId The UUID of the bill
+ * @returns A simplified bill number (e.g., "123")
+ */
+export const formatBillNumber = (billId: string): string => {
+  // Extract the first part of the UUID and convert to a number
+  if (!billId) return "1"; // Fallback
+  
+  const firstPart = billId.split('-')[0];
+  if (!firstPart) return "1"; // Fallback
+  
+  // Convert to integer by taking last 6 digits of hex as decimal
+  const num = parseInt(firstPart.slice(-6), 16);
+  return num.toString();
+};
 
 export const generatePDF = (bill: BillWithItems): Blob => {
   console.log("Generating PDF for bill:", bill);
-  
-  // Validate the bill has items
-  if (!bill.items || bill.items.length === 0) {
-    console.error("No items found in the bill for PDF generation", bill);
-  }
-  
+
   try {
     // Create a new jsPDF instance
     const doc = new jsPDF({
@@ -25,87 +36,103 @@ export const generatePDF = (bill: BillWithItems): Blob => {
       unit: 'mm',
       format: 'a5'
     });
-    
+
     const pageWidth = doc.internal.pageSize.getWidth();
-    const pageHeight = doc.internal.pageSize.getHeight();
     const margin = 10;
-    const contentWidth = pageWidth - (margin * 2);
-    
-    // Add logo at the top
-    try {
-      doc.addImage(SHOP_LOGO, 'PNG', (pageWidth / 2) - 25, margin, 50, 30, undefined, 'FAST');
-    } catch (logoError) {
-      console.error("Could not add logo:", logoError);
-    }
-    
-    // Add shop information
-    let currentY = margin + 35; // Starting Y position after logo
-    
-    // Shop address and contact
+
+    let currentY = margin;
+
+    // Remove the "Vivaas" shop name text at top, keep only the logo centered
+    // Add the logo image below (centered)
+    const logoUrl = "/lovable-uploads/ac58d961-7833-46c0-b5a4-fd5650245900.png";
+    const imgWidth = 40;
+    const imgHeight = 20;
+    doc.addImage(logoUrl, 'PNG', (pageWidth - imgWidth) / 2, currentY, imgWidth, imgHeight);
+    currentY += imgHeight + 5;
+
+    // Shop address lines with updated contact formatting
     doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
-    doc.text(SHOP_ADDRESS_LINE1, pageWidth / 2, currentY, { align: "center" });
+    doc.text("Shiv Park Phase 2 Shop No-6-7 Pune Solapur Road", pageWidth / 2, currentY, { align: "center" });
     currentY += 5;
-    doc.text(SHOP_ADDRESS_LINE2, pageWidth / 2, currentY, { align: "center" });
+    doc.text("Lakshumi Colony Opp.HDFC Bank Near Angle School Pune-412307", pageWidth / 2, currentY, { align: "center" });
     currentY += 5;
-    doc.text(`MOB No. ${SHOP_CONTACT}`, pageWidth / 2, currentY, { align: "center" });
-    currentY += 5;
-    doc.text(`GSTIN : ${SHOP_GSTIN}`, pageWidth / 2, currentY, { align: "center" });
-    currentY += 5;
-    
+    doc.text("MOB No. 9657171777 | 9765971717", pageWidth / 2, currentY, { align: "center" });
+    currentY += 7;
+
+    // Removed GSTIN line as per user request
+
     // Add a horizontal line
     doc.setLineWidth(0.1);
     doc.line(margin, currentY, pageWidth - margin, currentY);
     currentY += 7;
-    
+
     // Add bill information (Bill No, Date, Counter, Time)
     doc.setFontSize(10);
     doc.setFont("helvetica", "bold");
-    
-    const billDate = new Date(bill.createdAt);
-    const formattedDate = `${billDate.getDate().toString().padStart(2, '0')}/${(billDate.getMonth() + 1).toString().padStart(2, '0')}/${billDate.getFullYear()}`;
-    const formattedTime = billDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-    
-    // Bill details - left side
-    doc.text(`Bill No : ${bill.id}`, margin, currentY);
-    // Bill details - right side
-    doc.text(`Date : ${formattedDate}`, pageWidth - margin, currentY, { align: "right" });
+
+    const simpleBillNumber = formatBillNumber(bill.id);
+
+    const createdAtStr = bill.createdAt && typeof bill.createdAt === 'string'
+      ? bill.createdAt
+      : new Date().toISOString();
+
+    const billDate = new Date(createdAtStr);
+    const isValidDate = !isNaN(billDate.getTime());
+
+    const formattedDate = isValidDate
+      ? `${billDate.getDate().toString().padStart(2, '0')}/${(billDate.getMonth() + 1).toString().padStart(2, '0')}/${billDate.getFullYear()}`
+      : new Date().toLocaleDateString('en-IN', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+      });
+
+    const formattedTime = isValidDate
+      ? billDate.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })
+      : new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+
+    // Bill details - left side Bill No
+    doc.text(`Bill No : ${simpleBillNumber}`, margin, currentY);
+    // Bill details - right side Date (the Date line is removed now, so just move on)
+    // doc.text(`Date : ${formattedDate}`, pageWidth - margin, currentY, { align: "right" }); // Removed line
+
     currentY += 6;
-    
+
     // Counter - left side
     doc.text(`Counter No : 1`, margin, currentY);
     // Time - right side
     doc.text(`Time : ${formattedTime}`, pageWidth - margin, currentY, { align: "right" });
     currentY += 6;
-    
+
     // Add Customer Information
     if (bill.customerName || bill.customerPhone || bill.customerEmail) {
       doc.text("Customer:", margin, currentY);
       currentY += 5;
-      
+
       if (bill.customerName) {
         doc.setFont("helvetica", "normal");
         doc.text(`Name: ${bill.customerName}`, margin + 5, currentY);
         currentY += 5;
       }
-      
+
       if (bill.customerPhone) {
         doc.text(`Phone: ${bill.customerPhone}`, margin + 5, currentY);
         currentY += 5;
       }
-      
+
       if (bill.customerEmail) {
         doc.text(`Email: ${bill.customerEmail}`, margin + 5, currentY);
         currentY += 5;
       }
-      
+
       currentY += 2;
     }
-    
+
     // Add a separator line
     doc.line(margin, currentY, pageWidth - margin, currentY);
     currentY += 7;
-    
+
     // Add header for table columns
     doc.setFontSize(10);
     doc.setFont("helvetica", "bold");
@@ -114,71 +141,76 @@ export const generatePDF = (bill: BillWithItems): Blob => {
     doc.text("MRP", pageWidth * 0.75, currentY, { align: "center" });
     doc.text("Amount", pageWidth - margin, currentY, { align: "right" });
     currentY += 4;
-    
+
     // Add a separator line
     doc.setLineWidth(0.1);
     doc.line(margin, currentY, pageWidth - margin, currentY);
     currentY += 6;
-    
+
     // Add items
     doc.setFont("helvetica", "normal");
-    const hasItems = bill.items && bill.items.length > 0;
     let totalMRP = 0;
     let totalQty = 0;
-    
+
+    const hasItems = bill.items && Array.isArray(bill.items) && bill.items.length > 0;
+
     if (hasItems) {
       bill.items.forEach(item => {
-        const productName = item.productName || (item.product ? item.product.name : "Unknown Product");
-        const mrp = item.productPrice || (item.product ? item.product.price : 0);
+        const productName = item.productName ||
+          (item.product ? item.product.name : "Unknown Product");
+
+        const mrp = item.productPrice ||
+          (item.product ? item.product.price : 0);
+
         totalMRP += mrp * item.quantity;
         totalQty += item.quantity;
-        
-        // Product name
+
         doc.text(productName.toUpperCase(), margin, currentY);
-        // Quantity
         doc.text(item.quantity.toString(), pageWidth * 0.6, currentY, { align: "center" });
-        // MRP
         doc.text(formatCurrency(mrp, false), pageWidth * 0.75, currentY, { align: "center" });
-        // Total amount for this item
         doc.text(formatCurrency(mrp * item.quantity, false), pageWidth - margin, currentY, { align: "right" });
-        
+
         currentY += 6;
       });
     } else {
       doc.text("No items in this bill", pageWidth / 2, currentY, { align: "center" });
       currentY += 6;
     }
-    
+
+    // Show discount if applied
+    let finalTotal = totalMRP;
+    if ((bill.discountAmount && bill.discountAmount > 0) || (bill.discountValue && bill.discountValue > 0)) {
+      doc.setFont("helvetica", "bold");
+      // Changed label as requested from "Special Discount Offer" to "Discount"
+      let discountLabel = "Discount";
+      if (bill.discountType === "percent" && bill.discountValue) {
+        discountLabel += ` (${bill.discountValue}%)`;
+      }
+      doc.text(discountLabel, margin, currentY);
+      doc.text(`- ${formatCurrency(bill.discountAmount || 0, false)}`, pageWidth - margin, currentY, { align: "right" });
+      currentY += 6;
+      
+      // Update the final total after discount
+      finalTotal = bill.total || (totalMRP - (bill.discountAmount || 0));
+    }
+
     // Add a separator line
     doc.setLineWidth(0.1);
     doc.line(margin, currentY, pageWidth - margin, currentY);
     currentY += 6;
-    
-    // Total quantity and MRP
+
+    // Total quantity and MRP (after discount)
     doc.setFont("helvetica", "bold");
+    // Changed "Total MRP" text to "Total"
     doc.text(`Qty: ${totalQty}`, margin, currentY);
-    doc.text(`Total MRP: ${formatCurrency(totalMRP, false)}`, pageWidth - margin, currentY, { align: "right" });
+    doc.text(`Total: ${formatCurrency(finalTotal, false)}`, pageWidth - margin, currentY, { align: "right" });
     currentY += 6;
-    
-    // Total amount
-    doc.text(`Total :`, margin, currentY);
-    doc.setFontSize(11);
-    doc.text(`${formatCurrency(bill.total, false)}`, pageWidth - margin, currentY, { align: "right" });
-    currentY += 10;
-    
-    // Add payment details
+
+    // Payment details etc (keep existing code)
     doc.setFont("helvetica", "normal");
     doc.setFontSize(10);
-    doc.text(`${getPaymentMethodName(bill.paymentMethod)} : ${formatCurrency(bill.total, false)}`, margin, currentY);
-    doc.text(`Date : ${formattedDate}`, pageWidth / 2, currentY);
     currentY += 6;
-    
-    // Add UPI details
-    doc.text(`UPI No. 0`, margin, currentY);
-    doc.text(`Bank :`, pageWidth / 2, currentY);
-    currentY += 15;
-    
-    // Thank you message
+
     doc.setFont("helvetica", "normal");
     doc.setFontSize(9);
     doc.text("Thank you for shopping with us", pageWidth / 2, currentY, { align: "center" });
@@ -186,19 +218,36 @@ export const generatePDF = (bill: BillWithItems): Blob => {
     doc.text("Please visit again..!", pageWidth / 2, currentY, { align: "center" });
     currentY += 5;
     doc.text("*** Have A Nice Day ***", pageWidth / 2, currentY, { align: "center" });
-    
-    // Generate PDF blob
+
     const pdfBlob = doc.output('blob');
     return pdfBlob;
   } catch (error) {
     console.error("Error creating PDF:", error);
-    // Return a simple text blob as fallback
     return new Blob(['Error generating PDF'], { type: 'text/plain' });
   }
 };
 
 export const generateReceiptHTML = (bill: BillWithItems): string => {
-  const hasItems = bill.items && bill.items.length > 0;
+  // Ensure we have a valid date
+  const createdAtStr = bill.createdAt && typeof bill.createdAt === 'string' 
+    ? bill.createdAt 
+    : new Date().toISOString();
+  
+  const billDate = new Date(createdAtStr);
+  const isValidDate = !isNaN(billDate.getTime());
+  
+  const simpleBillNumber = formatBillNumber(bill.id);
+  
+  const formattedDate = isValidDate 
+    ? billDate.toLocaleDateString('en-IN')
+    : new Date().toLocaleDateString('en-IN');
+  
+  const formattedTime = isValidDate
+    ? billDate.toLocaleTimeString('en-IN', {hour: '2-digit', minute:'2-digit'})
+    : new Date().toLocaleTimeString('en-IN', {hour: '2-digit', minute:'2-digit'});
+  
+  // Check if bill.items exists, is an array, and has elements
+  const hasItems = bill.items && Array.isArray(bill.items) && bill.items.length > 0;
   
   const itemsHTML = hasItems 
     ? bill.items.map(item => {
@@ -222,7 +271,7 @@ export const generateReceiptHTML = (bill: BillWithItems): string => {
     <!DOCTYPE html>
     <html>
     <head>
-      <title>Receipt - ${bill.id}</title>
+      <title>Receipt - ${simpleBillNumber}</title>
       <meta charset="utf-8">
       <style>
         body { font-family: Arial, sans-serif; font-size: 12px; margin: 0; padding: 20px; }
@@ -246,8 +295,8 @@ export const generateReceiptHTML = (bill: BillWithItems): string => {
           <div>Shiv Park Phase 2 Shop No-6-7 Pune Solapur Road</div>
           <div>Lakshumi Colony Opposite HDFC Bank Near Angle School, Pune-412307</div>
           <div>9657171777 || 9765971717</div>
-          <div style="margin-top: 10px;">${new Date(bill.createdAt).toLocaleString()}</div>
-          <div style="margin-top: 5px;">Receipt #${bill.id}</div>
+          <div style="margin-top: 10px;">${formattedDate} ${formattedTime}</div>
+          <div style="margin-top: 5px;">Receipt #${simpleBillNumber}</div>
         </div>
         
         <div class="customer-info">
@@ -299,30 +348,6 @@ export const generateReceiptHTML = (bill: BillWithItems): string => {
   `;
 };
 
-export const generateSalesReportPDF = (reportData: any, period: string): Blob => {
-  try {
-    const doc = new jsPDF();
-    
-    // Add title
-    doc.setFontSize(18);
-    doc.text(`Vivaas - Sales Report (${period})`, doc.internal.pageSize.getWidth() / 2, 20, { align: "center" });
-    
-    // Add report data
-    // This would need to be customized based on your actual report data structure
-    
-    return doc.output('blob');
-  } catch (error) {
-    console.error("Error generating sales report PDF:", error);
-    return new Blob([`Error generating sales report for ${period}`], { type: 'text/plain' });
-  }
-};
-
-export const generateSalesReportExcel = (reportData: any, period: string): Blob => {
-  // This would generate a sales report Excel/CSV
-  const csv = `Period,Sales\n${period},${Math.random() * 10000}`;
-  return new Blob([csv], { type: 'text/csv' });
-};
-
 // Helper function to format currency
 function formatCurrency(amount: number, includeCurrencySymbol: boolean = true): string {
   const formatter = new Intl.NumberFormat('en-IN', {
@@ -343,4 +368,246 @@ function getPaymentMethodName(method: string): string {
     case 'digital-wallet': return 'UPI';
     default: return 'Unknown';
   }
+}
+
+export const generateSalesReportPDF = (reportData: any, period: string): Blob => {
+  try {
+    const doc = new jsPDF();
+
+    // Add title
+    doc.setFontSize(18);
+    doc.text(
+      `Vivaas - Sales Report (${period})`,
+      doc.internal.pageSize.getWidth() / 2,
+      20,
+      { align: "center" }
+    );
+
+    // Add date range
+    const currentDate = new Date().toLocaleDateString();
+    doc.setFontSize(10);
+    doc.text(
+      `Generated on: ${currentDate}`,
+      doc.internal.pageSize.getWidth() / 2,
+      30,
+      { align: "center" }
+    );
+
+    // TABLE DATA for 'products'
+    if (period === "products" && reportData.productSalesDetails) {
+      // Prepare data and columns
+      const tableBody = reportData.productSalesDetails.map((product: any) => [
+        product.name,
+        product.category,
+        product.totalQuantity.toString(),
+        formatNumberPlain(product.buyingPrice),
+        formatNumberPlain(product.sellingPrice),
+        formatNumberPlain(product.totalRevenue),
+        formatNumberPlain(product.totalProfit),
+      ]);
+
+      // AutoTable with professional formatting
+      autoTable(doc, {
+        head: [
+          [
+            "Product",
+            "Category",
+            "Qty Sold",
+            "Buying Price",
+            "Selling Price",
+            "Revenue",
+            "Profit",
+          ],
+        ],
+        body: tableBody,
+        startY: 40,
+        styles: {
+          fontSize: 10,
+          cellPadding: 3,
+          halign: "left",
+          valign: "middle",
+          overflow: "linebreak",
+        },
+        headStyles: {
+          fillColor: [41, 128, 185],
+          textColor: 255,
+        },
+        columnStyles: {
+          0: { cellWidth: 34, halign: "left" }, // Product
+          1: { cellWidth: 27, halign: "left" }, // Category
+          2: { cellWidth: 17, halign: "right" }, // Qty Sold
+          3: { cellWidth: 24, halign: "right" }, // Buying Price
+          4: { cellWidth: 24, halign: "right" }, // Selling Price
+          5: { cellWidth: 24, halign: "right" }, // Revenue
+          6: { cellWidth: 24, halign: "right" }, // Profit
+        },
+        margin: { left: 14, right: 14 },
+        didParseCell: function (data) {
+          // Set number formatting (no currency symbol, right aligned for all amount columns)
+          if (
+            data.section === "body" &&
+            (data.column.index === 2 ||
+              data.column.index === 3 ||
+              data.column.index === 4 ||
+              data.column.index === 5 ||
+              data.column.index === 6)
+          ) {
+            data.cell.styles.halign = 'right';
+          }
+        },
+      });
+
+      // Remove summary and most-selling/profitable products (nothing after the table)
+      // Add only footer with page info
+
+    } else {
+      // For other periods (daily, weekly, etc)
+      const data = reportData[`${period}Sales`] || [];
+      const tableBody = data.map((item: any) => [
+        item.day || item.week || item.name || item.year || "Unknown",
+        formatNumberPlain(item.sales),
+      ]);
+      autoTable(doc, {
+        head: [[period.charAt(0).toUpperCase() + period.slice(1), "Sales Amount"]],
+        body: tableBody,
+        startY: 40,
+        styles: {
+          fontSize: 10,
+          cellPadding: 5,
+        },
+        columnStyles: {
+          0: { halign: "left" },
+          1: { halign: "right" },
+        },
+        margin: { left: 14, right: 14 },
+      });
+      // No summary, just table
+    }
+
+    // Add footer
+    const pageCount = doc.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      doc.setFontSize(8);
+      doc.text(
+        `Page ${i} of ${pageCount} - Vivaas - Generated on ${new Date().toLocaleString()}`,
+        doc.internal.pageSize.getWidth() / 2,
+        doc.internal.pageSize.getHeight() - 10,
+        { align: "center" }
+      );
+    }
+
+    return doc.output("blob");
+  } catch (error) {
+    console.error("Error generating sales report PDF:", error);
+    return new Blob([`Error generating sales report for ${period}`], {
+      type: "text/plain",
+    });
+  }
+};
+
+export const generateSalesReportExcel = (reportData: any, period: string): Blob => {
+  try {
+    // Header row
+    let csv = '';
+    
+    if (period === "products" && reportData.productSalesDetails) {
+      // Product sales report CSV
+      csv = 'Product,Category,Brand,Qty Sold,Buying Price,Selling Price,Revenue,Profit\n';
+      
+      // Add data rows with proper number formatting (no special characters)
+      reportData.productSalesDetails.forEach((product: any) => {
+        const profit = formatNumberPlain(product.totalProfit);
+        
+        csv += `"${product.name}","${product.category}","${product.brand}",${product.totalQuantity},${formatNumberPlain(product.buyingPrice)},${formatNumberPlain(product.sellingPrice)},${formatNumberPlain(product.totalRevenue)},${profit}\n`;
+      });
+      
+      // Add summary row with clean formatting
+      const totalQuantity = reportData.productSalesDetails.reduce((sum: number, p: any) => sum + p.totalQuantity, 0);
+      const totalRevenue = reportData.productSalesDetails.reduce((sum: number, p: any) => sum + p.totalRevenue, 0);
+      const totalProfit = reportData.productSalesDetails.reduce((sum: number, p: any) => sum + p.totalProfit, 0);
+      
+      csv += `\n"TOTAL","","",${totalQuantity},"","",${formatNumberPlain(totalRevenue)},${formatNumberPlain(totalProfit)}\n`;
+      
+      // Add insights with clean formatting
+      if (reportData.mostSellingProduct) {
+        csv += `\n"Most Selling Product: ${reportData.mostSellingProduct.name} (${reportData.mostSellingProduct.totalQuantity} units)"\n`;
+      }
+      
+      if (reportData.mostProfitableProduct) {
+        csv += `"Most Profitable Product: ${reportData.mostProfitableProduct.name} (${formatNumberPlain(reportData.mostProfitableProduct.totalProfit)})"\n`;
+      }
+      
+    } else {
+      // For other reports (daily, weekly, monthly, yearly)
+      const data = reportData[`${period}Sales`] || [];
+      
+      // Determine the header name based on the period
+      let periodName = 'Day';
+      if (period === 'weekly') periodName = 'Week';
+      else if (period === 'monthly') periodName = 'Month';
+      else if (period === 'yearly') periodName = 'Year';
+      
+      csv = `${periodName},Sales Amount\n`;
+      
+      // Add data rows with clean number formatting
+      data.forEach((item: any) => {
+        const periodValue = item.day || item.week || item.name || item.year || 'Unknown';
+        csv += `"${periodValue}",${formatNumberPlain(item.sales)}\n`;
+      });
+    }
+    
+    return new Blob([csv], { type: 'text/csv' });
+  } catch (error) {
+    console.error("Error generating sales report CSV:", error);
+    return new Blob([`Error generating sales report CSV for ${period}`], { type: 'text/csv' });
+  }
+};
+
+// Improved helper function for formatting currency values in a clean way for PDF display
+// This avoids the issue with special characters in the PDF
+function formatNumber(amount: number): string {
+  if (typeof amount !== 'number') {
+    return '0.00';
+  }
+  
+  return amount.toLocaleString('en-IN', {
+    maximumFractionDigits: 2,
+    minimumFractionDigits: 2,
+    useGrouping: true
+  });
+}
+
+// Improved helper function for formatting profit values with proper negative sign
+function formatProfit(amount: number): string {
+  if (typeof amount !== 'number') {
+    return '₹0.00';
+  }
+  
+  if (amount < 0) {
+    return '-₹' + Math.abs(amount).toLocaleString('en-IN', {
+      maximumFractionDigits: 2,
+      minimumFractionDigits: 2,
+      useGrouping: true
+    });
+  }
+  
+  return '₹' + amount.toLocaleString('en-IN', {
+    maximumFractionDigits: 2,
+    minimumFractionDigits: 2,
+    useGrouping: true
+  });
+}
+
+// Helper function for formatting numbers for CSV (no currency symbol)
+function formatNumberPlain(amount: number): string {
+  if (typeof amount !== 'number' || isNaN(amount)) {
+    return "0.00";
+  }
+  return amount.toLocaleString("en-IN", {
+    style: "decimal",
+    maximumFractionDigits: 2,
+    minimumFractionDigits: 2,
+    useGrouping: true,
+  });
 }
