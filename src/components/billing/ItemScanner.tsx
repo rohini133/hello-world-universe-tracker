@@ -36,7 +36,7 @@ export function ItemScanner({ onItemScanned }: ItemScannerProps) {
         setItemNumber("");
         toast({
           title: "Product added to cart",
-          description: `${product.name}${product.size ? ` (${product.size})` : ''} has been added to the cart`,
+          description: `${product.name} has been added to the cart`,
         });
       } else {
         toast({

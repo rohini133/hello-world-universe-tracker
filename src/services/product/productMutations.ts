@@ -1,4 +1,3 @@
-
 import { Product } from "@/types/supabase-extensions";
 import { supabase, debugAuthStatus, refreshSession } from "@/integrations/supabase/client";
 import { mapProductToDatabaseProduct, mapDatabaseProductToProduct } from "./productHelpers";
@@ -125,8 +124,6 @@ export const addProduct = async (newProduct: Omit<Product, 'id' | 'createdAt' | 
       image: newProduct.image || '',
       description: newProduct.description || '',
       color: newProduct.color || null,
-      size: newProduct.size || null,
-      // Remove the user_id field from the insert operation
       sizes_stock: newProduct.sizes_stock || null  // Make sure to include the sizes_stock field
     };
     
@@ -298,7 +295,6 @@ export function buildProductForUpdate(product) {
     low_stock_threshold: product.lowStockThreshold || 5,
     image: product.image || '',
     color: product.color || null,
-    size: product.size || null,
     item_number: product.itemNumber,
     updated_at: new Date().toISOString(),
     sizes_stock: product.sizes_stock || null

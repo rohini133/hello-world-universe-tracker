@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -30,8 +31,7 @@ export const ProductSearch = ({ onAddToCart }: ProductSearchProps) => {
         product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         product.brand.toLowerCase().includes(searchTerm.toLowerCase()) ||
         product.itemNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (product.color && product.color.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (product.size && product.size.toLowerCase().includes(searchTerm.toLowerCase()))
+        (product.color && product.color.toLowerCase().includes(searchTerm.toLowerCase()))
       );
 
   const handleSearch = () => {

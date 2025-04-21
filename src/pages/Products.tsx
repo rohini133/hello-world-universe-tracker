@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { Card, CardContent } from "@/components/ui/card";
@@ -203,9 +204,9 @@ const Products = () => {
                       {product.description}
                     </p>
                     <div className="flex flex-wrap gap-2">
-                      {product.size && (
+                      {product.sizes_stock && Object.keys(product.sizes_stock).length > 0 && (
                         <Badge variant="outline" className="bg-gray-50">
-                          Size: {product.size}
+                          Sizes: {Object.keys(product.sizes_stock).join(', ')}
                         </Badge>
                       )}
                       {product.color && (
