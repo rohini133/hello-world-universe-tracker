@@ -1,4 +1,3 @@
-
 import { Bill, BillWithItems, Product, DashboardStats } from "@/types/supabase-extensions";
 
 export const sampleProducts: Product[] = [
@@ -17,8 +16,8 @@ export const sampleProducts: Product[] = [
     image: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
     imageUrl: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
     color: "Blue",
-    size: "M",
     itemNumber: "TX-1001",
+    sizes_stock: { M: 45 }, // replace size with sizes_stock representation
     createdAt: "2023-01-15T08:30:00Z",
     updatedAt: "2023-01-15T08:30:00Z",
     userId: "system"
@@ -38,6 +37,7 @@ export const sampleProducts: Product[] = [
     image: "https://images.unsplash.com/photo-1572569511254-d8f925fe2cbb?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
     imageUrl: "https://images.unsplash.com/photo-1572569511254-d8f925fe2cbb?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
     itemNumber: "AT-2001",
+    sizes_stock: {}, // no explicit sizes here, empty object to indicate no size options
     createdAt: "2023-02-10T10:15:00Z",
     updatedAt: "2023-02-10T10:15:00Z",
     userId: "system"
@@ -58,6 +58,7 @@ export const sampleProducts: Product[] = [
     imageUrl: "https://images.unsplash.com/photo-1517254797898-06f64f141cc0?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
     color: "Brown",
     itemNumber: "LG-3001",
+    sizes_stock: {},
     createdAt: "2023-03-05T14:45:00Z",
     updatedAt: "2023-03-05T14:45:00Z",
     userId: "system"
@@ -77,8 +78,8 @@ export const sampleProducts: Product[] = [
     image: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
     imageUrl: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
     color: "Red/Black",
-    size: "L",
     itemNumber: "SF-4001",
+    sizes_stock: { L: 18 },
     createdAt: "2023-04-12T09:20:00Z",
     updatedAt: "2023-04-12T09:20:00Z",
     userId: "system"
@@ -99,6 +100,7 @@ export const sampleProducts: Product[] = [
     imageUrl: "https://images.unsplash.com/photo-1541877944-ac82a091518a?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
     color: "Clear",
     itemNumber: "TP-5001",
+    sizes_stock: {},
     createdAt: "2023-05-20T11:30:00Z",
     updatedAt: "2023-05-20T11:30:00Z",
     userId: "system"
@@ -119,6 +121,7 @@ export const sampleProducts: Product[] = [
     imageUrl: "https://images.unsplash.com/photo-1570087935833-42e1be04a4f8?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
     color: "Silver",
     itemNumber: "HE-6001",
+    sizes_stock: {},
     createdAt: "2023-06-08T15:15:00Z",
     updatedAt: "2023-06-08T15:15:00Z",
     userId: "system"
@@ -139,6 +142,7 @@ export const sampleProducts: Product[] = [
     imageUrl: "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
     color: "Black",
     itemNumber: "TG-7001",
+    sizes_stock: {},
     createdAt: "2023-07-16T13:40:00Z",
     updatedAt: "2023-07-16T13:40:00Z",
     userId: "system"
@@ -159,6 +163,7 @@ export const sampleProducts: Product[] = [
     imageUrl: "https://images.unsplash.com/photo-1557935728-e6d1eaaa3378?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
     color: "Black",
     itemNumber: "FT-8001",
+    sizes_stock: {},
     createdAt: "2023-08-22T16:55:00Z",
     updatedAt: "2023-08-22T16:55:00Z",
     userId: "system"
@@ -179,6 +184,7 @@ export const sampleProducts: Product[] = [
     imageUrl: "https://images.unsplash.com/photo-1546868871-7041f2a55e12?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
     color: "Black",
     itemNumber: "TW-9001",
+    sizes_stock: {},
     createdAt: "2023-09-05T10:10:00Z",
     updatedAt: "2023-09-05T10:10:00Z",
     userId: "system"
@@ -199,6 +205,7 @@ export const sampleProducts: Product[] = [
     imageUrl: "https://images.unsplash.com/photo-1518611012118-696072aa579a?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
     color: "Purple",
     itemNumber: "FL-1010",
+    sizes_stock: {},
     createdAt: "2023-10-12T09:30:00Z",
     updatedAt: "2023-10-12T09:30:00Z",
     userId: "system"
@@ -219,6 +226,7 @@ export const sampleProducts: Product[] = [
     imageUrl: "https://images.unsplash.com/photo-1599669454699-248893623440?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
     color: "Black/Red",
     itemNumber: "GT-2200",
+    sizes_stock: {},
     createdAt: "2023-11-20T14:25:00Z",
     updatedAt: "2023-11-20T14:25:00Z",
     userId: "system"
@@ -239,6 +247,7 @@ export const sampleProducts: Product[] = [
     imageUrl: "https://images.unsplash.com/photo-1485955900006-10f4d324d411?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
     color: "White",
     itemNumber: "HD-3210",
+    sizes_stock: {},
     createdAt: "2023-12-05T11:45:00Z",
     updatedAt: "2023-12-05T11:45:00Z",
     userId: "system"
@@ -259,6 +268,7 @@ export const sampleProducts: Product[] = [
     imageUrl: "https://images.unsplash.com/photo-1602143407151-7111542de6e8?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
     color: "Silver",
     itemNumber: "EL-4200",
+    sizes_stock: {},
     createdAt: "2024-01-10T13:20:00Z",
     updatedAt: "2024-01-10T13:20:00Z",
     userId: "system"
@@ -279,6 +289,7 @@ export const sampleProducts: Product[] = [
     imageUrl: "https://images.unsplash.com/photo-1589003077984-894e90059376?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
     color: "Blue",
     itemNumber: "SW-5100",
+    sizes_stock: {},
     createdAt: "2024-02-15T10:45:00Z",
     updatedAt: "2024-02-15T10:45:00Z",
     userId: "system"
@@ -299,6 +310,7 @@ export const sampleProducts: Product[] = [
     imageUrl: "https://images.unsplash.com/photo-1532094349884-543bc11b234d?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
     color: "Brown",
     itemNumber: "AC-6100",
+    sizes_stock: {},
     createdAt: "2024-03-05T09:15:00Z",
     updatedAt: "2024-03-05T09:15:00Z",
     userId: "system"
@@ -318,6 +330,7 @@ export const sampleProducts: Product[] = [
     image: "https://images.unsplash.com/photo-1572726729207-a78d6feb18d7?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
     imageUrl: "https://images.unsplash.com/photo-1572726729207-a78d6feb18d7?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
     itemNumber: "AH-7100",
+    sizes_stock: {},
     createdAt: "2024-03-20T14:30:00Z",
     updatedAt: "2024-03-20T14:30:00Z",
     userId: "system"
@@ -338,6 +351,7 @@ export const sampleProducts: Product[] = [
     imageUrl: "https://images.unsplash.com/photo-1610189352312-af33e56536cd?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
     color: "Red/Gold",
     itemNumber: "FI-8100",
+    sizes_stock: {},
     createdAt: "2024-03-25T10:15:00Z",
     updatedAt: "2024-03-25T10:15:00Z",
     userId: "system"
@@ -358,6 +372,7 @@ export const sampleProducts: Product[] = [
     imageUrl: "https://images.unsplash.com/photo-1596040033229-a9821ebd058d?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
     color: "Silver",
     itemNumber: "KC-9100",
+    sizes_stock: {},
     createdAt: "2024-03-30T09:45:00Z",
     updatedAt: "2024-03-30T09:45:00Z",
     userId: "system"
@@ -378,6 +393,7 @@ export const sampleProducts: Product[] = [
     imageUrl: "https://images.unsplash.com/photo-1585670149967-b4f4da570117?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
     color: "Silver",
     itemNumber: "HK-1010",
+    sizes_stock: {},
     createdAt: "2024-04-02T11:30:00Z",
     updatedAt: "2024-04-02T11:30:00Z",
     userId: "system"
@@ -398,6 +414,7 @@ export const sampleProducts: Product[] = [
     imageUrl: "https://images.unsplash.com/photo-1579493934830-e343a7d0cf1e?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
     color: "Blue",
     itemNumber: "FK-1110",
+    sizes_stock: {},
     createdAt: "2024-04-05T10:15:00Z",
     updatedAt: "2024-04-05T10:15:00Z",
     userId: "system"
@@ -417,6 +434,7 @@ export const sampleProducts: Product[] = [
     image: "https://images.unsplash.com/photo-1555285042-068ab4d152e4?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
     imageUrl: "https://images.unsplash.com/photo-1555285042-068ab4d152e4?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
     itemNumber: "AL-1210",
+    sizes_stock: {},
     createdAt: "2024-04-08T09:20:00Z",
     updatedAt: "2024-04-08T09:20:00Z",
     userId: "system"
@@ -436,6 +454,7 @@ export const sampleProducts: Product[] = [
     image: "https://images.unsplash.com/photo-1594489573280-5c5b5b2df7ed?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
     imageUrl: "https://images.unsplash.com/photo-1594489573280-5c5b5b2df7ed?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
     itemNumber: "IH-1310",
+    sizes_stock: {},
     createdAt: "2024-04-10T11:30:00Z",
     updatedAt: "2024-04-10T11:30:00Z",
     userId: "system"
@@ -455,6 +474,7 @@ export const sampleProducts: Product[] = [
     image: "https://images.unsplash.com/photo-1576092768241-dec231879fc3?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
     imageUrl: "https://images.unsplash.com/photo-1576092768241-dec231879fc3?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
     itemNumber: "IS-1410",
+    sizes_stock: {},
     createdAt: "2024-04-12T14:45:00Z",
     updatedAt: "2024-04-12T14:45:00Z",
     userId: "system"
@@ -475,6 +495,7 @@ export const sampleProducts: Product[] = [
     imageUrl: "https://images.unsplash.com/photo-1604398907654-ec8ef552f321?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
     color: "Gold",
     itemNumber: "IC-1510",
+    sizes_stock: {},
     createdAt: "2024-04-15T16:30:00Z",
     updatedAt: "2024-04-15T16:30:00Z",
     userId: "system"
@@ -490,146 +511,4 @@ export const sampleBills: BillWithItems[] = [
         billId: "B001", 
         productId: sampleProducts[0].id, 
         productPrice: sampleProducts[0].price,
-        discountPercentage: sampleProducts[0].discountPercentage,
-        quantity: 2, 
-        total: sampleProducts[0].price * 2,
-        productName: sampleProducts[0].name,
-        product: sampleProducts[0],
-        createdAt: "2023-10-01T14:30:00Z" 
-      },
-      { 
-        id: "bi2", 
-        billId: "B001", 
-        productId: sampleProducts[2].id, 
-        productPrice: sampleProducts[2].price,
-        discountPercentage: sampleProducts[2].discountPercentage,
-        quantity: 1, 
-        total: sampleProducts[2].price,
-        productName: sampleProducts[2].name,
-        product: sampleProducts[2],
-        createdAt: "2023-10-01T14:30:00Z" 
-      }
-    ],
-    subtotal: 6997,
-    tax: 560,
-    total: 7557,
-    customerName: "John Doe",
-    customerPhone: "+1234567890",
-    paymentMethod: "card",
-    createdAt: "2023-10-01T14:30:00Z",
-    status: "completed",
-    userId: "system"
-  },
-  {
-    id: "B002",
-    items: [
-      { 
-        id: "bi3", 
-        billId: "B002", 
-        productId: sampleProducts[1].id, 
-        productPrice: sampleProducts[1].price,
-        discountPercentage: sampleProducts[1].discountPercentage,
-        quantity: 1, 
-        total: sampleProducts[1].price * (1 - sampleProducts[1].discountPercentage / 100),
-        productName: sampleProducts[1].name,
-        product: sampleProducts[1],
-        createdAt: "2023-10-02T10:15:00Z" 
-      },
-      { 
-        id: "bi4", 
-        billId: "B002", 
-        productId: sampleProducts[4].id, 
-        productPrice: sampleProducts[4].price,
-        discountPercentage: sampleProducts[4].discountPercentage,
-        quantity: 1, 
-        total: sampleProducts[4].price,
-        productName: sampleProducts[4].name,
-        product: sampleProducts[4],
-        createdAt: "2023-10-02T10:15:00Z" 
-      }
-    ],
-    subtotal: 6173,
-    tax: 494,
-    total: 6667,
-    customerName: "Jane Smith",
-    customerPhone: "+1987654321",
-    paymentMethod: "cash",
-    createdAt: "2023-10-02T10:15:00Z",
-    status: "completed",
-    userId: "system"
-  },
-  {
-    id: "B003",
-    items: [
-      { 
-        id: "bi5", 
-        billId: "B003", 
-        productId: sampleProducts[3].id, 
-        productPrice: sampleProducts[3].price,
-        discountPercentage: sampleProducts[3].discountPercentage,
-        quantity: 1, 
-        total: sampleProducts[3].price * (1 - sampleProducts[3].discountPercentage / 100),
-        productName: sampleProducts[3].name,
-        product: sampleProducts[3],
-        createdAt: "2023-10-03T16:45:00Z" 
-      },
-      { 
-        id: "bi6", 
-        billId: "B003", 
-        productId: sampleProducts[6].id, 
-        productPrice: sampleProducts[6].price,
-        discountPercentage: sampleProducts[6].discountPercentage,
-        quantity: 2, 
-        total: sampleProducts[6].price * 2 * (1 - sampleProducts[6].discountPercentage / 100),
-        productName: sampleProducts[6].name,
-        product: sampleProducts[6],
-        createdAt: "2023-10-03T16:45:00Z" 
-      }
-    ],
-    subtotal: 14598,
-    tax: 1168,
-    total: 15766,
-    customerName: "Robert Johnson",
-    customerEmail: "robert@example.com",
-    paymentMethod: "upi",
-    createdAt: "2023-10-03T16:45:00Z",
-    status: "completed",
-    userId: "system"
-  }
-];
-
-export const sampleDashboardStats: DashboardStats = {
-  totalSales: 25678900,
-  totalProducts: 24,
-  lowStock: 8,
-  lowStockItems: 8,  // Adding missing property
-  todaySales: 125000,
-  outOfStockItems: 3,
-  topSellingProducts: [
-    {
-      product: sampleProducts[1],
-      soldCount: 42
-    },
-    {
-      product: sampleProducts[3],
-      soldCount: 38
-    },
-    {
-      product: sampleProducts[0],
-      soldCount: 35
-    },
-    {
-      product: sampleProducts[6],
-      soldCount: 30
-    },
-    {
-      product: sampleProducts[8],
-      soldCount: 28
-    }
-  ],
-  recentSales: [
-    sampleBills[0],
-    sampleBills[1],
-    sampleBills[2]
-  ]
-};
+        discountPercentage: sample
