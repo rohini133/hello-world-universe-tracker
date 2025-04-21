@@ -17,7 +17,7 @@ export const sampleProducts: Product[] = [
     imageUrl: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
     color: "Blue",
     itemNumber: "TX-1001",
-    sizes_stock: { M: 45 }, // replace size with sizes_stock representation
+    sizes_stock: { M: 45 },
     createdAt: "2023-01-15T08:30:00Z",
     updatedAt: "2023-01-15T08:30:00Z",
     userId: "system"
@@ -37,7 +37,7 @@ export const sampleProducts: Product[] = [
     image: "https://images.unsplash.com/photo-1572569511254-d8f925fe2cbb?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
     imageUrl: "https://images.unsplash.com/photo-1572569511254-d8f925fe2cbb?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
     itemNumber: "AT-2001",
-    sizes_stock: {}, // no explicit sizes here, empty object to indicate no size options
+    sizes_stock: {},
     createdAt: "2023-02-10T10:15:00Z",
     updatedAt: "2023-02-10T10:15:00Z",
     userId: "system"
@@ -511,4 +511,25 @@ export const sampleBills: BillWithItems[] = [
         billId: "B001", 
         productId: sampleProducts[0].id, 
         productPrice: sampleProducts[0].price,
-        discountPercentage: sample
+        discountPercentage: sampleProducts[0].discountPercentage,
+        quantity: 2,
+        total: (sampleProducts[0].price * 2) * (1 - (sampleProducts[0].discountPercentage / 100)),
+        productName: sampleProducts[0].name,
+        product: sampleProducts[0]
+      }
+    ],
+    createdAt: "2024-04-20T11:00:00Z",
+    status: "paid",
+    userId: "system",
+    subtotal: 3998,
+    tax: 0,
+    total: 3998,
+    paymentMethod: "cash",
+    discountAmount: 0,
+    discountType: "percent",
+    discountValue: 0,
+    customerName: "John Doe",
+    customerPhone: "9876543210",
+    customerEmail: "johndoe@example.com",
+  }
+];
