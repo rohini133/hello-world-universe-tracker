@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { Product } from "@/types/supabase-extensions";
@@ -186,7 +185,6 @@ export function useBillingCart() {
     calculateTotal,
     calculateTax,
     updateStock,
-    // Adding missing properties
     subtotal: calculateSubtotal(),
     tax: calculateTax(),
     total: calculateTotal(),

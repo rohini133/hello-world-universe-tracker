@@ -70,6 +70,7 @@ export const CheckoutDialog = ({
     });
   };
 
+  // Post-checkout UI (receipt options)
   if (isPostCheckout && bill) {
     console.log("CheckoutDialog received bill:", bill);
     console.log("Bill has items:", bill.items?.length || 0);
@@ -204,7 +205,6 @@ export const CheckoutDialog = ({
       }
     };
 
-    // Post-checkout UI (receipt options)
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="sm:max-w-md">

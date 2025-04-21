@@ -30,6 +30,9 @@ export const createBill = async (billData: {
         customer_email: billData.customerEmail,
         payment_method: billData.paymentMethod,
         status: billData.status || 'completed',
+        discount_amount: billData.discountAmount || 0,
+        discount_type: billData.discountType,
+        discount_value: billData.discountValue || 0,
         user_id: (await supabase.auth.getUser()).data.user?.id || ''
       })
       .select()
